@@ -1,2 +1,10 @@
+# Class files #
+*.class
 
+# Package Files #
+*.jar
+*.war
+*.ear
+
+# Folders #
 /APVS project/bin
