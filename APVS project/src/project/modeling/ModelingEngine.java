@@ -1,4 +1,4 @@
-package modeling;
+package project.modeling;
 
 public class ModelingEngine {
 
