@@ -1,4 +1,4 @@
-package ui;
+package project.ui;
 
 import org.eclipse.swt.widgets.Display;
 import org.eclipse.swt.widgets.Shell;
