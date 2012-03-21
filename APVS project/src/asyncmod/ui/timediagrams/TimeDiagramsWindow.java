@@ -1,4 +1,4 @@
-package project.ui.timediagrams;
+package asyncmod.ui.timediagrams;
 
 import org.eclipse.swt.widgets.Dialog;
 import org.eclipse.swt.widgets.Display;

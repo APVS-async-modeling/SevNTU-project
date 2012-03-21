@@ -1,4 +1,4 @@
-package project.models;
+package asyncmod.models;
 
 public class SampleModel {
 
