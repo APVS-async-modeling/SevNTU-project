@@ -1,4 +1,4 @@
-package asyncmod.analysing;
+package asyncmod.resultsanalysing;
 
 public class ResultsAnalysing {
 
