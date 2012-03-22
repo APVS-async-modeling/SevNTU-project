@@ -32,9 +32,9 @@ import org.eclipse.swt.custom.SashForm;
 public class MainWindow {
 
 	private static final int WIDTH = 785;
-	private static final int HEIGHT = 518;	
+	private static final int HEIGHT = 518;
 	private static final int SPACE_BETWEEN_WINDOWS = 10;
-	
+
 	protected Shell shell;
 	private Composite composite_1;
 	private Composite composite_2;
@@ -84,26 +84,27 @@ public class MainWindow {
 		shell.setLayout(new FillLayout(SWT.HORIZONTAL));
 
 		shell.addControlListener(new ControlListener() {
-			
+
 			@Override
-			public void controlResized(ControlEvent e) {			
-				moveTimeDiagramsWindow();
-			}
-			
-			@Override
-			public void controlMoved(ControlEvent e) {
-				moveTimeDiagramsWindow();				
+			public void controlResized(ControlEvent e) {
+				setTimeDiagramsWindowBounds();
 			}
 
-			private void moveTimeDiagramsWindow() {
-				if(timeDiagramsWindow!=null){
-				int xCoord = getRightUpperCornerPosition().x + SPACE_BETWEEN_WINDOWS;
-				int yCoord = getRightUpperCornerPosition().y;
-				timeDiagramsWindow.setPosition(xCoord, yCoord);
+			@Override
+			public void controlMoved(ControlEvent e) {
+				setTimeDiagramsWindowBounds();
+			}
+
+			private void setTimeDiagramsWindowBounds() {
+				if (timeDiagramsWindow != null) {
+					int xCoord = getRightUpperCornerPosition().x
+							+ SPACE_BETWEEN_WINDOWS;
+					int yCoord = getRightUpperCornerPosition().y;
+					timeDiagramsWindow.setPosition(xCoord, yCoord);
 				}
 			}
 		});
-		
+
 		Menu menu = new Menu(shell, SWT.BAR);
 		shell.setMenuBar(menu);
 
@@ -145,16 +146,16 @@ public class MainWindow {
 
 		Menu menu_3 = new Menu(menuItemModeling);
 		menuItemModeling.setMenu(menu_3);
-		
+
 		MenuItem mntmStep = new MenuItem(menu_3, SWT.NONE);
 		mntmStep.setText("Step");
-		
+
 		MenuItem mntmFullRun = new MenuItem(menu_3, SWT.NONE);
 		mntmFullRun.setText("Full Run");
-		
+
 		MenuItem mntmNewItem_1 = new MenuItem(menu_3, SWT.NONE);
 		mntmNewItem_1.setText("Run Until...");
-		
+
 		MenuItem mntmReset = new MenuItem(menu_3, SWT.NONE);
 		mntmReset.setText("Reset");
 
@@ -223,12 +224,13 @@ public class MainWindow {
 		btnNewButton_3.addSelectionListener(new SelectionAdapter() {
 
 			@Override
-			public void widgetSelected(SelectionEvent e) {			
-				final int coordX = getRightUpperCornerPosition().x + SPACE_BETWEEN_WINDOWS;
-			    final int coordY = getRightUpperCornerPosition().y;
+			public void widgetSelected(SelectionEvent e) {
+				final int coordX = getRightUpperCornerPosition().x
+						+ SPACE_BETWEEN_WINDOWS;
+				final int coordY = getRightUpperCornerPosition().y;
 				if (timeDiagramsWindow == null) {
 					// singleton instance of TimeDiagram
-					timeDiagramsWindow = new TimeDiagramsWindow(shell, SWT.NONE);				
+					timeDiagramsWindow = new TimeDiagramsWindow(shell, SWT.NONE);
 					timeDiagramsWindow.open(coordX, coordY);
 				} else {
 					if (timeDiagramsWindow.isVisible()) {
@@ -241,17 +243,15 @@ public class MainWindow {
 		});
 		btnNewButton_3.setText("Time diagrams...");
 
-		SashForm sashForm = new SashForm(mainComposite, SWT.NONE);		
+		SashForm sashForm = new SashForm(mainComposite, SWT.NONE);
 		sashForm.setLayoutData(BorderLayout.CENTER);
-		
-		// btnNewButton_3.setImage(SWTResourceManager.getImage(MainWindow.class,"icons\\Nirvana.ico"));
 
 		Composite elementsComposite = new Composite(sashForm, SWT.BORDER);
 		elementsComposite.setLayout(new FillLayout(SWT.HORIZONTAL));
 
-		ExpandBar bar = new ExpandBar(elementsComposite, SWT.BORDER
-				| SWT.V_SCROLL);
+		ExpandBar bar = new ExpandBar(elementsComposite, SWT.BORDER	| SWT.V_SCROLL);
 
+		// ExpandBar customization
 		Composite composite = new Composite(bar, SWT.NONE);
 		GridLayout layout = new GridLayout();
 		layout.marginLeft = layout.marginTop = layout.marginRight = layout.marginBottom = 8;
@@ -291,6 +291,8 @@ public class MainWindow {
 		new Label(composite_2, SWT.NONE);
 		bar.setSpacing(6);
 
+		
+		
 		Composite modelingStateComposite = new Composite(sashForm, SWT.NONE);
 		sashForm.setWeights(new int[] { 1, 3 });
 
@@ -349,8 +351,8 @@ public class MainWindow {
 		box.setMessage(text);
 		box.open();
 	}
-	
-	public Point getRightUpperCornerPosition(){
+
+	public Point getRightUpperCornerPosition() {
 		int coordX = shell.getBounds().x + shell.getBounds().width;
 		int coordY = shell.getBounds().y;
 		Point point = new Point(coordX, coordY);
