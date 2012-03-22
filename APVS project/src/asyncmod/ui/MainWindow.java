@@ -233,6 +233,7 @@ public class MainWindow {
 					timeDiagramsWindow = new TimeDiagramsWindow(shell, SWT.NONE);
 					timeDiagramsWindow.open(coordX, coordY);
 				} else {
+
 					if (timeDiagramsWindow.isVisible()) {
 						timeDiagramsWindow.hide();
 					} else {
@@ -289,9 +290,7 @@ public class MainWindow {
 		item3.setHeight(composite_2.computeSize(SWT.DEFAULT, SWT.DEFAULT).y);
 		item3.setControl(composite_2);
 		new Label(composite_2, SWT.NONE);
-		bar.setSpacing(6);
-
-		
+		bar.setSpacing(6);		
 		
 		Composite modelingStateComposite = new Composite(sashForm, SWT.NONE);
 		sashForm.setWeights(new int[] { 1, 3 });
