@@ -1,9 +1,11 @@
 package asyncmod.ui.timediagrams;
 
+import org.eclipse.swt.SWT;
 import org.eclipse.swt.widgets.Dialog;
 import org.eclipse.swt.widgets.Display;
+import org.eclipse.swt.widgets.Event;
+import org.eclipse.swt.widgets.Listener;
 import org.eclipse.swt.widgets.Shell;
-import org.eclipse.swt.SWT;
 
 public class TimeDiagramsWindow extends Dialog {
 
@@ -26,6 +28,15 @@ public class TimeDiagramsWindow extends Dialog {
 	 */
 	public Object open(int coordX, int coordY) {
 		createContents(coordX, coordY);
+		shlTimeDiagramsWindow.addListener(SWT.Traverse, new Listener() {
+		    @Override
+		    public void handleEvent(Event event) {
+		        if (event.character == SWT.ESC)
+		        {
+		            event.doit = false;
+		        }
+		    }
+		});
 		shlTimeDiagramsWindow.open();
 		shlTimeDiagramsWindow.layout();
 		isOpened = true;
