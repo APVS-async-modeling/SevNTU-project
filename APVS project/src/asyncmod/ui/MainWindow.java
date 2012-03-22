@@ -1,8 +1,11 @@
 package asyncmod.ui;
 
 import org.eclipse.swt.SWT;
+import org.eclipse.swt.events.ControlEvent;
+import org.eclipse.swt.events.ControlListener;
 import org.eclipse.swt.events.SelectionAdapter;
 import org.eclipse.swt.events.SelectionEvent;
+import org.eclipse.swt.graphics.Point;
 import org.eclipse.swt.layout.FillLayout;
 import org.eclipse.swt.layout.GridLayout;
 import org.eclipse.swt.layout.RowLayout;
@@ -24,19 +27,22 @@ import swing2swt.layout.BorderLayout;
 import asyncmod.about.AboutProgram;
 import asyncmod.about.AboutTeam;
 import asyncmod.ui.timediagrams.TimeDiagramsWindow;
+import org.eclipse.swt.custom.SashForm;
 
 public class MainWindow {
 
-	private static final int InitialHeight = 518;
-	private static final int initialWidth = 785;
+	private static final int WIDTH = 785;
+	private static final int HEIGHT = 518;	
+	private static final int SPACE_BETWEEN_WINDOWS = 10;
+	
 	protected Shell shell;
 	private Composite composite_1;
 	private Composite composite_2;
-	private Text txtStatusPanel;
+	private Text statusPanel;
 	private Text modelingResultsText;
 	private Text errorsText;
 	private Text warningText;
-	
+
 	private TimeDiagramsWindow timeDiagramsWindow;
 
 	/**
@@ -73,18 +79,39 @@ public class MainWindow {
 	 */
 	protected void createContents() {
 		shell = new Shell();
-		shell.setSize(initialWidth, InitialHeight);
+		shell.setSize(WIDTH, HEIGHT);
 		shell.setText("APVS async modeling project");
 		shell.setLayout(new FillLayout(SWT.HORIZONTAL));
 
+		shell.addControlListener(new ControlListener() {
+			
+			@Override
+			public void controlResized(ControlEvent e) {			
+				moveTimeDiagramsWindow();
+			}
+			
+			@Override
+			public void controlMoved(ControlEvent e) {
+				moveTimeDiagramsWindow();				
+			}
+
+			private void moveTimeDiagramsWindow() {
+				if(timeDiagramsWindow!=null){
+				int xCoord = getRightUpperCornerPosition().x + SPACE_BETWEEN_WINDOWS;
+				int yCoord = getRightUpperCornerPosition().y;
+				timeDiagramsWindow.setPosition(xCoord, yCoord);
+				}
+			}
+		});
+		
 		Menu menu = new Menu(shell, SWT.BAR);
 		shell.setMenuBar(menu);
 
-		MenuItem mntmFile = new MenuItem(menu, SWT.CASCADE);
-		mntmFile.setText("File");
+		MenuItem menuItemFile = new MenuItem(menu, SWT.CASCADE);
+		menuItemFile.setText("File");
 
-		Menu menu_1 = new Menu(mntmFile);
-		mntmFile.setMenu(menu_1);
+		Menu menu_1 = new Menu(menuItemFile);
+		menuItemFile.setMenu(menu_1);
 
 		MenuItem mntmOpen_1 = new MenuItem(menu_1, SWT.CASCADE);
 		mntmOpen_1.setText("Open");
@@ -113,17 +140,29 @@ public class MainWindow {
 		MenuItem mntmClose = new MenuItem(menu_1, SWT.NONE);
 		mntmClose.setText("Exit");
 
-		MenuItem mntmModeling = new MenuItem(menu, SWT.CASCADE);
-		mntmModeling.setText("Modeling");
+		MenuItem menuItemModeling = new MenuItem(menu, SWT.CASCADE);
+		menuItemModeling.setText("Modeling");
 
-		Menu menu_3 = new Menu(mntmModeling);
-		mntmModeling.setMenu(menu_3);
+		Menu menu_3 = new Menu(menuItemModeling);
+		menuItemModeling.setMenu(menu_3);
+		
+		MenuItem mntmStep = new MenuItem(menu_3, SWT.NONE);
+		mntmStep.setText("Step");
+		
+		MenuItem mntmFullRun = new MenuItem(menu_3, SWT.NONE);
+		mntmFullRun.setText("Full Run");
+		
+		MenuItem mntmNewItem_1 = new MenuItem(menu_3, SWT.NONE);
+		mntmNewItem_1.setText("Run Until...");
+		
+		MenuItem mntmReset = new MenuItem(menu_3, SWT.NONE);
+		mntmReset.setText("Reset");
 
-		MenuItem mntmAbout = new MenuItem(menu, SWT.CASCADE);
-		mntmAbout.setText("About");
+		MenuItem menuItemAbout = new MenuItem(menu, SWT.CASCADE);
+		menuItemAbout.setText("About");
 
-		Menu menu_2 = new Menu(mntmAbout);
-		mntmAbout.setMenu(menu_2);
+		Menu menu_2 = new Menu(menuItemAbout);
+		menuItemAbout.setMenu(menu_2);
 
 		MenuItem mntmNewItem = new MenuItem(menu_2, SWT.NONE);
 		mntmNewItem.addSelectionListener(new SelectionAdapter() {
@@ -143,22 +182,22 @@ public class MainWindow {
 		});
 		mntmTeam.setText("Team");
 
-		TabFolder tabFolder = new TabFolder(shell, SWT.NONE);
+		TabFolder mainWindowTabFolder = new TabFolder(shell, SWT.NONE);
 
-		TabItem tbtmMainWindow = new TabItem(tabFolder, SWT.NONE);
-		tbtmMainWindow.setText("Main Window");
+		TabItem MainWindowTab = new TabItem(mainWindowTabFolder, SWT.NONE);
+		MainWindowTab.setText("Main Window");
 
-		Composite composite1 = new Composite(tabFolder, SWT.NONE);
-		tbtmMainWindow.setControl(composite1);
-		composite1.setLayout(new BorderLayout(0, 0));
+		Composite mainComposite = new Composite(mainWindowTabFolder, SWT.NONE);
+		MainWindowTab.setControl(mainComposite);
+		mainComposite.setLayout(new BorderLayout(0, 0));
 
-		txtStatusPanel = new Text(composite1, SWT.BORDER);
-		txtStatusPanel.setToolTipText("See \"log\" for more details");
-		txtStatusPanel.setEditable(false);
-		txtStatusPanel.setText("Status panel");
-		txtStatusPanel.setLayoutData(BorderLayout.SOUTH);
+		statusPanel = new Text(mainComposite, SWT.BORDER);
+		statusPanel.setToolTipText("See \"log\" for more details");
+		statusPanel.setEditable(false);
+		statusPanel.setText("Status panel");
+		statusPanel.setLayoutData(BorderLayout.SOUTH);
 
-		Composite ControlButtonsComposite = new Composite(composite1,
+		Composite ControlButtonsComposite = new Composite(mainComposite,
 				SWT.BORDER);
 		ControlButtonsComposite.setLayoutData(BorderLayout.NORTH);
 		RowLayout rl_ControlButtonsComposite = new RowLayout(SWT.HORIZONTAL);
@@ -184,30 +223,33 @@ public class MainWindow {
 		btnNewButton_3.addSelectionListener(new SelectionAdapter() {
 
 			@Override
-			public void widgetSelected(SelectionEvent e) {
-				int coordX = shell.getBounds().x + shell.getBounds().width + 7;
-				int coordY = shell.getBounds().y;
+			public void widgetSelected(SelectionEvent e) {			
+				final int coordX = getRightUpperCornerPosition().x + SPACE_BETWEEN_WINDOWS;
+			    final int coordY = getRightUpperCornerPosition().y;
 				if (timeDiagramsWindow == null) {
-					timeDiagramsWindow = new TimeDiagramsWindow(shell,SWT.NONE);
+					// singleton instance of TimeDiagram
+					timeDiagramsWindow = new TimeDiagramsWindow(shell, SWT.NONE);				
 					timeDiagramsWindow.open(coordX, coordY);
 				} else {
-					if(timeDiagramsWindow.isOpened()){
-						timeDiagramsWindow.close();
+					if (timeDiagramsWindow.isVisible()) {
+						timeDiagramsWindow.hide();
 					} else {
-						timeDiagramsWindow.open(coordX, coordY);
+						timeDiagramsWindow.show(coordX, coordY);
 					}
 				}
 			}
 		});
 		btnNewButton_3.setText("Time diagrams...");
 
-		//btnNewButton_3.setImage(SWTResourceManager.getImage(MainWindow.class,"icons\\Nirvana.ico"));
+		SashForm sashForm = new SashForm(mainComposite, SWT.NONE);		
+		sashForm.setLayoutData(BorderLayout.CENTER);
 		
-		Composite ElementsComposite = new Composite(composite1, SWT.NONE);
-		ElementsComposite.setLayoutData(BorderLayout.WEST);
-		ElementsComposite.setLayout(new FillLayout(SWT.HORIZONTAL));
+		// btnNewButton_3.setImage(SWTResourceManager.getImage(MainWindow.class,"icons\\Nirvana.ico"));
 
-		ExpandBar bar = new ExpandBar(ElementsComposite, SWT.BORDER
+		Composite elementsComposite = new Composite(sashForm, SWT.BORDER);
+		elementsComposite.setLayout(new FillLayout(SWT.HORIZONTAL));
+
+		ExpandBar bar = new ExpandBar(elementsComposite, SWT.BORDER
 				| SWT.V_SCROLL);
 
 		Composite composite = new Composite(bar, SWT.NONE);
@@ -249,66 +291,69 @@ public class MainWindow {
 		new Label(composite_2, SWT.NONE);
 		bar.setSpacing(6);
 
-		Composite composite_4 = new Composite(composite1, SWT.BORDER);
-		composite_4.setLayoutData(BorderLayout.EAST);
+		Composite modelingStateComposite = new Composite(sashForm, SWT.NONE);
+		sashForm.setWeights(new int[] { 1, 3 });
 
-		Composite composite_5 = new Composite(composite1, SWT.BORDER);
-		composite_5.setLayoutData(BorderLayout.CENTER);
+		TabItem LogTab = new TabItem(mainWindowTabFolder, SWT.NONE);
+		LogTab.setText("Log");
 
-		TabItem tbtmLog = new TabItem(tabFolder, SWT.NONE);
-		tbtmLog.setText("Log");
+		Composite logComposite = new Composite(mainWindowTabFolder, SWT.NONE);
+		LogTab.setControl(logComposite);
+		logComposite.setLayout(new BorderLayout(0, 0));
 
-		Composite composite_3 = new Composite(tabFolder, SWT.NONE);
-		tbtmLog.setControl(composite_3);
-		composite_3.setLayout(new BorderLayout(0, 0));
+		TabFolder logTabFolder = new TabFolder(logComposite, SWT.BOTTOM);
+		logTabFolder.setLayoutData(BorderLayout.CENTER);
 
-		TabFolder tabFolder_1 = new TabFolder(composite_3, SWT.BOTTOM);
-		tabFolder_1.setLayoutData(BorderLayout.CENTER);
+		TabItem modelingResultsTab = new TabItem(logTabFolder, SWT.NONE);
+		modelingResultsTab.setText("Modeling results");
 
-		TabItem tbtmNewItem = new TabItem(tabFolder_1, SWT.NONE);
-		tbtmNewItem.setText("Modeling results");
-
-		Composite modelingResultsComposite = new Composite(tabFolder_1,
+		Composite modelingResultsComposite = new Composite(logTabFolder,
 				SWT.NONE);
-		tbtmNewItem.setControl(modelingResultsComposite);
+		modelingResultsTab.setControl(modelingResultsComposite);
 		modelingResultsComposite.setLayout(new FillLayout(SWT.HORIZONTAL));
 
 		modelingResultsText = new Text(modelingResultsComposite, SWT.BORDER);
 		modelingResultsText.setEditable(false);
 
-		TabItem tbtmNewItem_1 = new TabItem(tabFolder_1, SWT.NONE);
-		tbtmNewItem_1.setText("Errors");
+		TabItem errorsTab = new TabItem(logTabFolder, SWT.NONE);
+		errorsTab.setText("Errors");
 
-		Composite errorsComposite = new Composite(tabFolder_1, SWT.NONE);
-		tbtmNewItem_1.setControl(errorsComposite);
+		Composite errorsComposite = new Composite(logTabFolder, SWT.NONE);
+		errorsTab.setControl(errorsComposite);
 		errorsComposite.setLayout(new FillLayout(SWT.HORIZONTAL));
 
 		errorsText = new Text(errorsComposite, SWT.BORDER);
 		errorsText.setEditable(false);
 
-		TabItem tbtmNewItem_2 = new TabItem(tabFolder_1, SWT.NONE);
-		tbtmNewItem_2.setText("Warnings");
+		TabItem warningsTab = new TabItem(logTabFolder, SWT.NONE);
+		warningsTab.setText("Warnings");
 
-		Composite warningsComposite = new Composite(tabFolder_1, SWT.NONE);
-		tbtmNewItem_2.setControl(warningsComposite);
+		Composite warningsComposite = new Composite(logTabFolder, SWT.NONE);
+		warningsTab.setControl(warningsComposite);
 		warningsComposite.setLayout(new FillLayout(SWT.HORIZONTAL));
 
 		warningText = new Text(warningsComposite, SWT.BORDER);
 		warningText.setEditable(false);
 	}
+
+	public void showMessage(String text, String type) {
+
+		int msgWindowType = 0;
+
+		if (type.equals("Alert"))
+			msgWindowType |= SWT.ICON_WARNING;
+		if (type.equals("Information"))
+			msgWindowType |= SWT.ICON_INFORMATION;
+
+		MessageBox box = new MessageBox(shell, msgWindowType);
+		box.setMessage(text);
+		box.open();
+	}
 	
-	
-    public void showMessage(String text, String type)
-    {       
-        
-        int msgWindowType = 0;
-                
-        if(type.equals("Alert"))msgWindowType|=SWT.ICON_WARNING;
-        if(type.equals("Information"))msgWindowType|=SWT.ICON_INFORMATION;
-        
-        MessageBox box = new MessageBox(shell, msgWindowType);
-        box.setMessage(text);
-        box.open();
-    }
-	
+	public Point getRightUpperCornerPosition(){
+		int coordX = shell.getBounds().x + shell.getBounds().width;
+		int coordY = shell.getBounds().y;
+		Point point = new Point(coordX, coordY);
+		return point;
+	}
 }
