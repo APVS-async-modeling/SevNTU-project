@@ -16,6 +16,9 @@ import org.eclipse.swt.widgets.Shell;
 import org.eclipse.swt.widgets.Tree;
 import org.eclipse.swt.widgets.TreeItem;
 
+import asyncmod.ui.MainWindow;
+import asyncmod.ui.Messages;
+
 import swing2swt.layout.BorderLayout;
 
 public class TimeDiagramsWindow extends Dialog {
@@ -65,6 +68,7 @@ public class TimeDiagramsWindow extends Dialog {
         });
 
         timeDiagramsShell.open();
+        MainWindow.status(Messages.TIME_DIAGRAMS_OPEN);
         timeDiagramsShell.layout();
         isVisible = true;
         Display display = getParent().getDisplay();
@@ -80,11 +84,13 @@ public class TimeDiagramsWindow extends Dialog {
         timeDiagramsShell.setBounds(coordX, coordY, WIDTH, HEIGHT);
         isVisible = true;
         timeDiagramsShell.setVisible(isVisible);
+        MainWindow.status(Messages.TIME_DIAGRAMS_SHOW);
     }
 
     public void hide() {
         isVisible = false;
         timeDiagramsShell.setVisible(isVisible);
+        MainWindow.status(Messages.TIME_DIAGRAMS_HIDE);
     }
 
     public boolean isVisible() {

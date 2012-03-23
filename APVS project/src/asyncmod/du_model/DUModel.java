@@ -10,7 +10,7 @@ public class DUModel {
 	}
 	
 	public int getId() {
-		return this.id;
+		return id;
 	}
 
 	public void setId(int aNewId){

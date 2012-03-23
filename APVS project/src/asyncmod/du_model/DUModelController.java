@@ -26,7 +26,7 @@ public class DUModelController {
 		int id = Integer.parseInt(br.readLine());
 		duModel.setId(id);
 
-		// etc
+		// etc		
 		return duModel;
 	}
 

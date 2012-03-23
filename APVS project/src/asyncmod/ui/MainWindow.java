@@ -1,5 +1,9 @@
 package asyncmod.ui;
 
+import java.io.File;
+import java.text.SimpleDateFormat;
+import java.util.Calendar;
+
 import org.eclipse.swt.SWT;
 import org.eclipse.swt.custom.SashForm;
 import org.eclipse.swt.events.ControlEvent;
@@ -15,6 +19,7 @@ import org.eclipse.swt.widgets.Composite;
 import org.eclipse.swt.widgets.Display;
 import org.eclipse.swt.widgets.ExpandBar;
 import org.eclipse.swt.widgets.ExpandItem;
+import org.eclipse.swt.widgets.FileDialog;
 import org.eclipse.swt.widgets.Label;
 import org.eclipse.swt.widgets.Menu;
 import org.eclipse.swt.widgets.MenuItem;
@@ -28,23 +33,50 @@ import swing2swt.layout.BorderLayout;
 import asyncmod.about.AboutProgram;
 import asyncmod.about.AboutTeam;
 import asyncmod.ui.timediagrams.TimeDiagramsWindow;
+import org.eclipse.swt.layout.GridData;
 
 public class MainWindow {
 
-    protected Shell shell;
+    // UI!
+    // 
 
+    protected Shell shell;
+    protected Display display;
+    // sizes
     private static final int WIDTH = 785;
     private static final int HEIGHT = 518;
-    private static final int SPACE_BETWEEN_WINDOWS = 10;
-
-    private Composite composite_1;
-    private Composite composite_2;
-    private Text statusPanel;
-    private Text modelingResultsText;
-    private Text errorsText;
-    private Text warningText;
-
+    // buttons
+    private Button initialStateBtn;
+    private Button stepBtn;
+    private Button fullRunBtn;
+    private Button runUntilBtn;
+    private Button timeDiagramsBtn;
+    // text fields
+    private static Text statusPanel;
+    private static Text modelingResultsText;
+    private static Text errorsText;
+    private static Text warningText;
+    private static Text fullLogText;
     private TimeDiagramsWindow timeDiagramsWindow;
+    // file dialogs
+    private FileDialog dlgLibrary;
+    private FileDialog dlgDiscreteModel;
+    private FileDialog dlgSignals;
+
+    // Non - UI!
+    //
+
+    //files
+    private File libraryFile;
+    private File discreteModelFile;
+    private File signalsFile;
+    // etc
+    private final static Calendar cal = Calendar.getInstance();
+    static SimpleDateFormat dateFormatter = new SimpleDateFormat("HH:mm:ss '('yyyy.MM.dd')'");
+    private MenuItem resetMenuItem;
+    private MenuItem runUntilMenuItem;
+    private MenuItem fullRunMenuItem;
+    private MenuItem stepMenuItem;
 
     /**
      * Launch the application.
@@ -64,8 +96,11 @@ public class MainWindow {
      * Open the window.
      */
     public final void open() {
-        Display display = Display.getDefault();
+        display = Display.getDefault();     
+        
         createContents();
+        configureFileDialogs();
+        
         shell.open();
         shell.layout();
         while (!shell.isDisposed()) {
@@ -73,6 +108,21 @@ public class MainWindow {
                 display.sleep();
             }
         }
+    }
+
+    private void configureFileDialogs() {
+        dlgDiscreteModel = new FileDialog(shell, SWT.SINGLE);
+        dlgLibrary = new FileDialog(shell, SWT.SINGLE);
+        dlgSignals = new FileDialog(shell, SWT.SINGLE);
+        
+        dlgDiscreteModel.setFilterExtensions(new String[] { "*.du;"});
+        dlgDiscreteModel.setFilterNames(new String[] { "Discrete Unit files (*.du;)" });
+        
+        dlgLibrary.setFilterExtensions(new String[] { "*.lb;"});
+        dlgLibrary.setFilterNames(new String[] { "Library files (*.lb;)" });
+        
+        dlgSignals.setFilterExtensions(new String[] { "*.sig;"});
+        dlgSignals.setFilterNames(new String[] { "Signals files (*.sig;)" });
     }
 
     /**
@@ -85,21 +135,19 @@ public class MainWindow {
         shell.setLayout(new FillLayout(SWT.HORIZONTAL));
 
         shell.addControlListener(new ControlListener() {
-
             @Override
             public void controlResized(final ControlEvent e) {
-                setTimeDiagramsWindowBounds();
+                updateTimeDiagramsWindowPosition();
             }
 
             @Override
             public void controlMoved(final ControlEvent e) {
-                setTimeDiagramsWindowBounds();
+                updateTimeDiagramsWindowPosition();
             }
 
-            private void setTimeDiagramsWindowBounds() {
+            private void updateTimeDiagramsWindowPosition() {
                 if (timeDiagramsWindow != null) {
-                    int xCoord = getRightUpperCornerPosition().x
-                            + SPACE_BETWEEN_WINDOWS;
+                    int xCoord = getRightUpperCornerPosition().x + Constants.SPACE_BETWEEN_WINDOWS;
                     int yCoord = getRightUpperCornerPosition().y;
                     timeDiagramsWindow.setPosition(xCoord, yCoord);
                 }
@@ -121,15 +169,62 @@ public class MainWindow {
         Menu menu_4 = new Menu(mntmOpen_1);
         mntmOpen_1.setMenu(menu_4);
 
-        MenuItem mntmOpenLibraryFile = new MenuItem(menu_4, SWT.NONE);
-        mntmOpenLibraryFile.setText("Open Library file...");
+        MenuItem openLibraryFileMenuItem = new MenuItem(menu_4, SWT.NONE);
+        openLibraryFileMenuItem.setText("Open Library file...");
 
-        MenuItem mntmOpenDiscreteModel = new MenuItem(menu_4, SWT.NONE);
-        mntmOpenDiscreteModel.setText("Open Discrete Model file...");
+        final MenuItem openDiscreteModelMenuItem = new MenuItem(menu_4, SWT.NONE);
+        openDiscreteModelMenuItem.setEnabled(false);
+        openDiscreteModelMenuItem.setText("Open Discrete Model file...");
 
-        MenuItem mntmOpenSignalsFile = new MenuItem(menu_4, SWT.NONE);
-        mntmOpenSignalsFile.setText("Open Signals file...");
-
+        final MenuItem openSignalsFileMenuItem = new MenuItem(menu_4, SWT.NONE);
+        openSignalsFileMenuItem.setEnabled(false);
+        openSignalsFileMenuItem.setText("Open Signals file...");
+      
+        openLibraryFileMenuItem.addSelectionListener(new SelectionAdapter() {
+            @Override
+            public void widgetSelected(final SelectionEvent e) {
+                final String libraryFilePath = dlgLibrary.open();
+                if (libraryFilePath != null) {
+                    libraryFile = new File(libraryFilePath);   
+                    openDiscreteModelMenuItem.setEnabled(true);
+                    String message = Messages.LIBRARY_FILE_SELECTED + libraryFilePath;
+                    status(message);
+                } else {
+                    status(Messages.LIBRARY_FILE_NOT_SELECTED);
+                }
+            }
+        });
+        
+        openDiscreteModelMenuItem.addSelectionListener(new SelectionAdapter() {
+            @Override
+            public void widgetSelected(final SelectionEvent e) {
+                final String discreteModelFilePath = dlgDiscreteModel.open();
+                if (discreteModelFilePath != null) {
+                    discreteModelFile = new File(discreteModelFilePath);
+                    openSignalsFileMenuItem.setEnabled(true);
+                    String message = Messages.DISCRETE_MODEL_FILE_SELECTED + discreteModelFilePath;
+                    status(message);                    
+                } else {
+                    status(Messages.DISCRETE_MODEL_FILE_NOT_SELECTED);
+                }
+            }
+        });
+        
+        openSignalsFileMenuItem.addSelectionListener(new SelectionAdapter() {
+            @Override
+            public void widgetSelected(final SelectionEvent e) {
+                final String signalsFilePath = dlgSignals.open();
+                if (signalsFilePath != null) {
+                    signalsFile = new File(signalsFilePath);
+                    setModelingButtonsAndMenuEnabled(true);
+                    String message = Messages.SIGNALS_FILE_SELECTED + signalsFilePath;
+                    status(message);
+                } else {
+                    status(Messages.SIGNALS_FILE_NOT_SELECTED);
+                }
+            }
+        });    
+        
         MenuItem mntmSave = new MenuItem(menu_1, SWT.CASCADE);
         mntmSave.setText("Save");
 
@@ -154,17 +249,17 @@ public class MainWindow {
         Menu menu_3 = new Menu(menuItemModeling);
         menuItemModeling.setMenu(menu_3);
 
-        MenuItem mntmStep = new MenuItem(menu_3, SWT.NONE);
-        mntmStep.setText("Step");
+        stepMenuItem = new MenuItem(menu_3, SWT.NONE);
+        stepMenuItem.setText("Step");
 
-        MenuItem mntmFullRun = new MenuItem(menu_3, SWT.NONE);
-        mntmFullRun.setText("Full Run");
+        fullRunMenuItem = new MenuItem(menu_3, SWT.NONE);
+        fullRunMenuItem.setText("Full Run");
 
-        MenuItem mntmNewItem_1 = new MenuItem(menu_3, SWT.NONE);
-        mntmNewItem_1.setText("Run Until...");
+        runUntilMenuItem = new MenuItem(menu_3, SWT.NONE);
+        runUntilMenuItem.setText("Run Until...");
 
-        MenuItem mntmReset = new MenuItem(menu_3, SWT.NONE);
-        mntmReset.setText("Reset");
+        resetMenuItem = new MenuItem(menu_3, SWT.NONE);
+        resetMenuItem.setText("Reset");
 
         MenuItem menuItemAbout = new MenuItem(menu, SWT.CASCADE);
         menuItemAbout.setText("About");
@@ -173,22 +268,22 @@ public class MainWindow {
         menuItemAbout.setMenu(menu_2);
 
         MenuItem mntmNewItem = new MenuItem(menu_2, SWT.NONE);
+        mntmNewItem.setText("Program");
         mntmNewItem.addSelectionListener(new SelectionAdapter() {
             @Override
             public void widgetSelected(final SelectionEvent e) {
                 showMessage(AboutProgram.Text, "Information");
             }
         });
-        mntmNewItem.setText("Program");
 
         MenuItem mntmTeam = new MenuItem(menu_2, SWT.NONE);
+        mntmTeam.setText("Team");
         mntmTeam.addSelectionListener(new SelectionAdapter() {
             @Override
             public void widgetSelected(final SelectionEvent e) {
                 showMessage(AboutTeam.Text, "Information");
             }
         });
-        mntmTeam.setText("Team");
 
         TabFolder mainWindowTabFolder = new TabFolder(shell, SWT.NONE);
 
@@ -215,32 +310,31 @@ public class MainWindow {
         rl_ControlButtonsComposite.fill = true;
         ControlButtonsComposite.setLayout(rl_ControlButtonsComposite);
 
-        Button btnInitialState = new Button(ControlButtonsComposite, SWT.NONE);
-        btnInitialState.setText("Initial State");
+        initialStateBtn = new Button(ControlButtonsComposite, SWT.NONE);
+        initialStateBtn.setText("Initial State");
 
-        Button btnNewButton = new Button(ControlButtonsComposite, SWT.NONE);
-        btnNewButton.setText("Step");
+        stepBtn = new Button(ControlButtonsComposite, SWT.NONE);
+        stepBtn.setText("Step");
 
-        Button btnNewButton_1 = new Button(ControlButtonsComposite, SWT.NONE);
-        btnNewButton_1.setText("Full Run");
+        fullRunBtn = new Button(ControlButtonsComposite, SWT.NONE);
+        fullRunBtn.setText("Full Run");
 
-        Button btnNewButton_2 = new Button(ControlButtonsComposite, SWT.NONE);
-        btnNewButton_2.setText("Run Until...");
+        runUntilBtn = new Button(ControlButtonsComposite, SWT.NONE);
+        runUntilBtn.setText("Run Until...");
 
-        Button btnNewButton_3 = new Button(ControlButtonsComposite, SWT.NONE);
-        btnNewButton_3.addSelectionListener(new SelectionAdapter() {
-
+        timeDiagramsBtn = new Button(ControlButtonsComposite, SWT.NONE);
+        timeDiagramsBtn.setText("Time diagrams...");
+        timeDiagramsBtn.setEnabled(false);
+        timeDiagramsBtn.addSelectionListener(new SelectionAdapter() {
             @Override
             public void widgetSelected(SelectionEvent e) {
-                final int coordX = getRightUpperCornerPosition().x
-                        + SPACE_BETWEEN_WINDOWS;
+                final int coordX = getRightUpperCornerPosition().x + Constants.SPACE_BETWEEN_WINDOWS;
                 final int coordY = getRightUpperCornerPosition().y;
                 if (timeDiagramsWindow == null) {
                     // singleton instance of TimeDiagram
                     timeDiagramsWindow = new TimeDiagramsWindow(shell, SWT.NONE);
                     timeDiagramsWindow.open(coordX, coordY);
                 } else {
-
                     if (timeDiagramsWindow.isVisible()) {
                         timeDiagramsWindow.hide();
                     } else {
@@ -249,7 +343,6 @@ public class MainWindow {
                 }
             }
         });
-        btnNewButton_3.setText("Time diagrams...");
 
         SashForm sashForm = new SashForm(mainComposite, SWT.NONE);
         sashForm.setLayoutData(BorderLayout.CENTER);
@@ -261,49 +354,24 @@ public class MainWindow {
 
         // ExpandBar customization
         Composite composite = new Composite(bar, SWT.NONE);
-        GridLayout layout = new GridLayout();
-        layout.marginLeft = layout.marginTop = layout.marginRight = layout.marginBottom = 8;
-        layout.verticalSpacing = 10;
-        composite.setLayout(layout);
-        Label label = new Label(composite, SWT.NONE);
-        label.setText("Element 1 description");
+        composite.setLayout(new GridLayout(1, false));
+        Text textField = new Text(composite, SWT.WRAP | SWT.CENTER | SWT.MULTI);
+        textField.setEditable(false);
+        textField.setLayoutData(new GridData(SWT.FILL, SWT.FILL, true, true, 1, 1));
+        textField.setText("Element 1 description");
         ExpandItem item1 = new ExpandItem(bar, SWT.NONE, 0);
+        item1.setExpanded(true);
         item1.setText("Element 1");
         item1.setHeight(composite.computeSize(SWT.DEFAULT, SWT.DEFAULT).y);
         item1.setControl(composite);
 
-        composite_1 = new Composite(bar, SWT.NONE);
-        layout = new GridLayout(2, false);
-        layout.marginLeft = layout.marginTop = layout.marginRight = layout.marginBottom = 8;
-        layout.verticalSpacing = 10;
-        composite_1.setLayout(layout);
-        label = new Label(composite_1, SWT.NONE);
-        label.setText("Element 2 description");
-        ExpandItem item2 = new ExpandItem(bar, SWT.NONE, 1);
-        item2.setText("Element 2");
-        item2.setHeight(composite_1.computeSize(SWT.DEFAULT, SWT.DEFAULT).y);
-        item2.setControl(composite_1);
-        new Label(composite_1, SWT.NONE);
-
-        composite_2 = new Composite(bar, SWT.NONE);
-        layout = new GridLayout(2, true);
-        layout.marginLeft = layout.marginTop = layout.marginRight = layout.marginBottom = 8;
-        layout.verticalSpacing = 10;
-        composite_2.setLayout(layout);
-        label = new Label(composite_2, SWT.NONE);
-        label.setText("Element 3 description");
-        ExpandItem item3 = new ExpandItem(bar, SWT.NONE, 2);
-        item3.setText("Element 3");
-        item3.setHeight(composite_2.computeSize(SWT.DEFAULT, SWT.DEFAULT).y);
-        item3.setControl(composite_2);
-        new Label(composite_2, SWT.NONE);
         bar.setSpacing(6);
 
         Composite modelingStateComposite = new Composite(sashForm, SWT.NONE);
         sashForm.setWeights(new int[] { 1, 3 });
 
         TabItem LogTab = new TabItem(mainWindowTabFolder, SWT.NONE);
-        LogTab.setText("Log");
+        LogTab.setText("Additional");
 
         Composite logComposite = new Composite(mainWindowTabFolder, SWT.NONE);
         LogTab.setControl(logComposite);
@@ -320,7 +388,7 @@ public class MainWindow {
         modelingResultsTab.setControl(modelingResultsComposite);
         modelingResultsComposite.setLayout(new FillLayout(SWT.HORIZONTAL));
 
-        modelingResultsText = new Text(modelingResultsComposite, SWT.BORDER);
+        modelingResultsText = new Text(modelingResultsComposite, SWT.BORDER | SWT.READ_ONLY | SWT.WRAP | SWT.MULTI);
         modelingResultsText.setEditable(false);
 
         TabItem errorsTab = new TabItem(logTabFolder, SWT.NONE);
@@ -330,7 +398,7 @@ public class MainWindow {
         errorsTab.setControl(errorsComposite);
         errorsComposite.setLayout(new FillLayout(SWT.HORIZONTAL));
 
-        errorsText = new Text(errorsComposite, SWT.BORDER);
+        errorsText = new Text(errorsComposite, SWT.BORDER | SWT.READ_ONLY | SWT.WRAP | SWT.MULTI);
         errorsText.setEditable(false);
 
         TabItem warningsTab = new TabItem(logTabFolder, SWT.NONE);
@@ -340,24 +408,20 @@ public class MainWindow {
         warningsTab.setControl(warningsComposite);
         warningsComposite.setLayout(new FillLayout(SWT.HORIZONTAL));
 
-        warningText = new Text(warningsComposite, SWT.BORDER);
+        warningText = new Text(warningsComposite, SWT.BORDER | SWT.READ_ONLY | SWT.WRAP | SWT.MULTI);
         warningText.setEditable(false);
-    }
-
-    public void showMessage(final String text, final String type) {
-
-        int msgWindowType = 0;
-
-        if (type.equals("Alert")) {
-            msgWindowType |= SWT.ICON_WARNING;
-        }
-        if (type.equals("Information")) {
-            msgWindowType |= SWT.ICON_INFORMATION;
-        }
-
-        MessageBox box = new MessageBox(shell, msgWindowType);
-        box.setMessage(text);
-        box.open();
+        
+        TabItem logsTab = new TabItem(logTabFolder, SWT.NONE);
+        logsTab.setText("Logs");
+        
+        Composite fullLogComposite = new Composite(logTabFolder, SWT.NONE);
+        logsTab.setControl(fullLogComposite);
+        fullLogComposite.setLayout(new FillLayout(SWT.HORIZONTAL));
+        
+        fullLogText = new Text(fullLogComposite, SWT.BORDER | SWT.READ_ONLY | SWT.WRAP | SWT.MULTI);
+        fullLogText.setEditable(false);
+        
+        setModelingButtonsAndMenuEnabled(false);
     }
 
     public final Point getRightUpperCornerPosition() {
@@ -365,5 +429,67 @@ public class MainWindow {
         int coordY = shell.getBounds().y;
         Point point = new Point(coordX, coordY);
         return point;
+    }
+    
+    private void setModelingButtonsAndMenuEnabled(boolean state) {
+        // buttons:
+        initialStateBtn.setEnabled(state);
+        stepBtn.setEnabled(state);
+        fullRunBtn.setEnabled(state);
+        runUntilBtn.setEnabled(state);
+        timeDiagramsBtn.setEnabled(state);
+        
+        // menus:
+        stepMenuItem.setEnabled(state);
+        fullRunMenuItem.setEnabled(state);
+        runUntilMenuItem.setEnabled(state);
+        resetMenuItem.setEnabled(state);
+    }
+    
+    public void showMessage(final String text, final String type) {
+
+        int msgWindowType = 0;
+
+        if (type.equals("Alert")) {
+            msgWindowType |= SWT.ICON_WARNING;
+            addError(text);
+        }
+        if (type.equals("Information")) {
+            msgWindowType |= SWT.ICON_INFORMATION;
+            addToLog(text);            
+        }
+
+        MessageBox box = new MessageBox(shell, msgWindowType);
+        box.setMessage(text);
+        box.open();
+    }
+       
+    public static void status(String str){
+        statusPanel.setText(str);
+        addToLog("[Status] " + str);
+    }
+
+    public static void addWarning(String str) {           
+        warningText.append(dateFormatter.format(cal.getTime())+ ": "+str + "\n");
+        appendLineDelimiter(warningText);
+        addToLog("[Warning] " + str);
+    }
+
+    public static void addError(String str) {           
+        errorsText.append(dateFormatter.format(cal.getTime())+ ": "+str + "\n");
+        appendLineDelimiter(errorsText);
+        addToLog("[Error] " + str);
+    }
+
+    public static void addToLog(String str) {     
+        fullLogText.append(dateFormatter.format(cal.getTime())+ ": "+str + "\n");
+        appendLineDelimiter(fullLogText);        
+    }
+
+    private static void appendLineDelimiter(Text textField){
+//        for(int i=0; i<150; i++) {
+//            textField.append(UI.LINE_DELIMITER_SYMBOL);
+//        }
+//        textField.append("\n");
     }
 }
