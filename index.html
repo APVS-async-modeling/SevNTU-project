@@ -1,0 +1,115 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset='utf-8'>
+
+  <title>APVS-async-modeling/SevNTU-project @ GitHub</title>
+
+  <style type="text/css">
+    body {
+      margin-top: 1.0em;
+      background-color: #4f0660;
+      font-family: Helvetica, Arial, FreeSans, san-serif;
+      color: #ffffff;
+    }
+    #container {
+      margin: 0 auto;
+      width: 700px;
+    }
+    h1 { font-size: 3.8em; color: #b0f99f; margin-bottom: 3px; }
+    h1 .small { font-size: 0.4em; }
+    h1 a { text-decoration: none }
+    h2 { font-size: 1.5em; color: #b0f99f; }
+    h3 { text-align: center; color: #b0f99f; }
+    a { color: #b0f99f; }
+    .description { font-size: 1.2em; margin-bottom: 30px; margin-top: 30px; font-style: italic;}
+    .download { float: right; }
+    pre { background: #000; color: #fff; padding: 15px;}
+    hr { border: 0; width: 80%; border-bottom: 1px solid #aaa}
+    .footer { text-align:center; padding-top:30px; font-style: italic; }
+  </style>
+</head>
+
+<body>
+  <a href="https://github.com/APVS-async-modeling/SevNTU-project"><img style="position: absolute; top: 0; right: 0; border: 0;" src="http://s3.amazonaws.com/github/ribbons/forkme_right_darkblue_121621.png" alt="Fork me on GitHub" /></a>
+
+  <div id="container">
+
+    <div class="download">
+      <a href="https://github.com/APVS-async-modeling/SevNTU-project/zipball/master">
+        <img border="0" width="90" src="https://github.com/images/modules/download/zip.png"></a>
+      <a href="https://github.com/APVS-async-modeling/SevNTU-project/tarball/master">
+        <img border="0" width="90" src="https://github.com/images/modules/download/tar.png"></a>
+    </div>
+
+    <h1><a href="https://github.com/APVS-async-modeling/SevNTU-project">SevNTU-project</a>
+      <span class="small">by <a href="https://github.com/APVS-async-modeling">APVS-async-modeling</a></span></h1>
+
+    <div class="description">
+      Asynchronous modeling education student project.
+    </div>
+
+    
+      <p>1). «Общий интерфейс» Графический интерфейс программы (использует модуль 7 для вывода состояния системы) + соединение всех остальных модулей. (А) (Ярославцев)
+
+2). «Создание модели ДУ» = создание модели входной схемы. Этот модуль читает входной файл описания ДУ и создает модель всего устройства в памяти. (Б) (Данильчук)
+
+3). «Создание модели элементов ДУ». Все, кто занимается этой частью, вместе разрабатывают общий формат задания одного элемента в файле-библиотеке элементов. Т.е. - описание элемента унифицировано и его формат проектируется вместе всеми, у кого вариант «Г».
+Каждый, кто делает эту часть, должен написать две процедуры. Первая – создает модель элемента ДУ данного типа в памяти,  вторая – задает функцию элемента данного типа при моделировании. 
+Описание элемента находится в файле-библиотеке элементов.  Этот модуль должен найти заданную модель в библиотеке и оттранслировать. (Г) (Доля, Махмудов, Кекух, Грохольский)
+
+4). Моделирование ДУ. Выполняет моделирование на уровне схемы. Этот модуль считывает тестовые наборы из файла, содержащего значения входных сигналов схемы, выводит результат моделирования в файл протокола моделирования, для выполнения моделирования элемент обращается к функциям модулей «Г». (В) (Григоров)
+
+5). Интерфейс вывода временных диаграмм. Берет результаты моделирования из файла-протокола отладки, запрашивает у пользователя список контактов, для которых должны быть постоены диаграммы, и должен их построить в отдельном окне.
+Дополнительно: при наличии пошаговой обработки – м. быть возможно пошаговое построение временных диаграмм. (Д) (Середа)
+
+6). Модуль анализа результатов моделирования. Должен реализовать проверку некоторого набора опасных состояний (риски) по результатам моделирования.
+На входе модуля - файл-протокола отладки. На выходе – список рисков и других опасных ситуаций с описанием их типов, записанный в текстовый файл – протокол анализа результатов. 
+Должна быть задана возможность проверять ситуации, и создавать протокол. Для заданного набора – проверить риск, временной интервал считать таким-то, таким-то. Составить протокол – главное. В такое-то время – такой-то риск и т.п. (Е) (Монастырный)
+
+7). Модуль (интерфейс) вывода состояния системы. Обращается к модулю моделирования (В) и  выводит его состояние в графический интерфейс пользователя (для каждого шага или каждого тестового набора, точнее, по требованию модуля моделирования).
+Т.е. – в данном модуле должна быть функция, которая по требованию извне обращается к модулю моделирования и читает из него значения внутренних рабочих структур, а затем – выводит считанные значения в графический интерфейс в удобочитаемом форматированном виде.
+  (Ж) (Глазырин)</p>
+    
+
+    
+      <h2>Dependencies</h2>
+      <p>SWT, Swing2SWT.</p>
+    
+
+    
+
+    
+      <h2>License</h2>
+      <p>EGPL 1.0</p>
+    
+
+    
+      <h2>Authors</h2>
+      <p>Daniil Yaroslavtsev (Danill.Yaroslavtsev@gmail.com)<br/>      </p>
+    
+
+    
+      <h2>Contact</h2>
+      <p> (Daniil.Yaroslavtsev@gmail.com)<br/>      </p>
+    
+
+    <h2>Download</h2>
+    <p>
+      You can download this project in either
+      <a href="https://github.com/APVS-async-modeling/SevNTU-project/zipball/master">zip</a> or
+      <a href="https://github.com/APVS-async-modeling/SevNTU-project/tarball/master">tar formats.
+    </p>
+    <p>You can also clone the project with <a href="http://git-scm.com">Git</a>
+      by running:
+      <pre>$ git clone git://github.com/APVS-async-modeling/SevNTU-project</pre>
+    </p>
+
+    <div class="footer">
+      get the source code on GitHub : <a href="https://github.com/APVS-async-modeling/SevNTU-project">APVS-async-modeling/SevNTU-project</a>
+    </div>
+
+  </div>
+
+</body>
+</html>
