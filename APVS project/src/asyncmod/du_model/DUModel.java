@@ -20,6 +20,11 @@ public class DUModel {
 	public String getName() {
 		return name;
 	}
+
+    public int getCircuitCount() {
+        // TODO Auto-generated method stub
+        return 0;
+    }
 	
 	// ... etc
 	
