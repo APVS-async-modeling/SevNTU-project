@@ -12,7 +12,6 @@ public class Scheme {
     private List<String> inputs;
     private List<String> outputs;
     
-    @SuppressWarnings("unchecked")
     public Scheme() {
         elements = new LinkedHashMap<String, String>();
         circuits = new LinkedHashMap<String, Circuit>();
