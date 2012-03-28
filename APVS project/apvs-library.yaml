@@ -1,0 +1,33 @@
+!!asyncmod.modeling.Library
+library:
+  2_AND:
+    delay: 80
+    descr: 2-input 2-state AND element
+    ecnt: 0
+    icnt: 2
+    name: 2_AND
+    ocnt: 1
+    smask: 3
+    table:
+    - [0, 0, 0]
+    - [0, 1, 0]
+    - [1, 0, 0]
+    - [1, 1, 1]
+  2_OR:
+    delay: 75
+    descr: 2-input 3-state OR element
+    ecnt: 0
+    icnt: 2
+    name: 2_OR
+    ocnt: 1
+    smask: 7
+    table:
+    - [0, 0, 0]
+    - [0, 1, 1]
+    - [0, 2, 2]
+    - [1, 0, 1]
+    - [1, 1, 1]
+    - [1, 2, 1]
+    - [2, 0, 2]
+    - [2, 1, 1]
+    - [2, 2, 2]

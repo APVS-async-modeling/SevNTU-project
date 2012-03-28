@@ -1,0 +1,14 @@
+!!asyncmod.modeling.Scheme
+circuits:
+  circ_02:
+    contacts: []
+  circ_03:
+    contacts: []
+  circ_01:
+    contacts:
+    - {contact: '1', element: elem_01, type: 1}
+  circ_04:
+    contacts: []
+elements: {elem_01: 2_AND, elem_02: 2_OR}
+inputs: [circ_01, circ_02]
+outputs: [circ_04]
