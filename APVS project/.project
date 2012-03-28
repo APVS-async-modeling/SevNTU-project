@@ -30,5 +30,10 @@
 			<type>1</type>
 			<location>D:/Android/eclipse-SDK-3.7.1-win32-x86_64/git/SevNTU-project/APVS project/libs/org.eclipse.swt_3.7.1.v3738a.jar</location>
 		</link>
+		<link>
+			<name>libs/snakeyaml-1.10.jar</name>
+			<type>1</type>
+			<location>D:/Android/eclipse-SDK-3.7.1-win32-x86_64/git/SevNTU-project/APVS project/libs/snakeyaml-1.10.jar</location>
+		</link>
 	</linkedResources>
 </projectDescription>

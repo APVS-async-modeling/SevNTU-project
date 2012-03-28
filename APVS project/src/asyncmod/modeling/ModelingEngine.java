@@ -1,78 +1,76 @@
 package asyncmod.modeling;
 
 import java.awt.List;
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileNotFoundException;
+import java.io.InputStream;
+import java.util.Map;
 
-import asyncmod.du_model.DUModel;
+import org.yaml.snakeyaml.Yaml;
+
 
 public class ModelingEngine implements Runnable {
-    private boolean running;
-    private boolean lazy;
+    private Scheme scheme;
+    private Signal signal;
+    private Library library;
     
-    private long stepcnt;
     private long timecnt;
-    private long endstep;
     private long endtime;
-    private boolean tmst;
-    private boolean stabile;
-    private Object anchor;
-    
-    private int[] signals;      // сигналы в цеп€х ƒ”
-    private int[] internals;    // состо€ни€ триггеров
-    private DUModel scheme;
     private List events = null;
     
-    public ModelingEngine(DUModel model, Object anchor) {
-        this.anchor = anchor;
-        tmst = false;
-        running = true;
-        scheme = model;
-        signals = new int[scheme.getCircuitCount()];
-    }
-    public void stop() {
-        running = false;
-    }
-    public void useStep() {
-        tmst = true;
-    }
-    public void useTime() {
-        tmst = false;
-    }
-
-    // 
-    public void run()
-    {
-        while (running)
-        {
-            
-            // scheme.getInputs()
-            // добавить все значени€ со входных цепей (с фиктивного элемента) как новые событи€
-            if (tmst && stepcnt <= endstep || timecnt <= endtime)
-            {
-                // TODO: реализаци€ моделировани€
-                
-                // getEvents(time) получить все событи€ с одинаковой меткой времени, они будут обрабатыватьс€ обновременно
-                // List<Integer> calcCurciuts() получение номеров всех цепей, в которых произошли изменени€
-                // calcContacts() [через модельный getContacts(circuit_id)] получение всех входных контактов
-                // createEvents() создание соответствующих событий
-                
-                // TODO: сделать удобную модель на основе той, что ссоздаст ќлег
-                
-                
-                
-            } else
-                try {
-                    anchor.wait();
-                } catch (InterruptedException e) {
-                    e.printStackTrace();
-                }
+    public ModelingEngine(String library, String scheme, String signal) {
+        Yaml yaml = new Yaml();
+        InputStream stream = null;
+        
+        try {
+            stream = new FileInputStream(library);
+        } catch (FileNotFoundException e) {
+            e.printStackTrace();
         }
+        try {
+            this.library = (Library) yaml.load(stream);
+        } catch(Exception e) {
+            e.printStackTrace();
+            System.err.println("Ќеверный документ библиотеки!  уда лез, криворукий пидорас?");
+        }
+        System.out.println(yaml.dump(this.library));
+        
+        try {
+            stream = new FileInputStream(scheme);
+        } catch (FileNotFoundException e) {
+            e.printStackTrace();
+        }
+        try {
+            this.scheme = (Scheme) yaml.load(stream);
+        } catch(Exception e) {
+            e.printStackTrace();
+            System.err.println("Ќеверный документ схемы!  уда лез, криворукий пидорас?");
+        }
+        System.out.println(yaml.dump(this.scheme));
+        
+        try {
+            stream = new FileInputStream(signal);
+        } catch (FileNotFoundException e) {
+            e.printStackTrace();
+        }
+        try {
+            this.signal = (Signal) yaml.load(stream);
+        } catch(Exception e) {
+            e.printStackTrace();
+            System.err.println("Ќеверный документ сигналов!  уда лез, криворукий пидорас?");
+        }
+        System.out.println(yaml.dump(this.scheme));
+    }
+    
+    public static void main(String[] args) {
+        new ModelingEngine("apvs-library.yaml", "apvs-scheme.yaml", "apvs-signal.yaml");
+    }
+    
+    public void run() {
+        // TODO: моделирование
     }
 
     
-    private class Event{
-        long time;
-        int element;
-        int contact;
-        int newstate;
-    }
+    
 }
