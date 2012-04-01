@@ -3,11 +3,9 @@ package asyncmod.modeling;
 public class Contact {
     private String element;
     private String contact;
-    private int type;
     
     public Contact() {
         element = contact = null;
-        type = 0;
     }
     
     public String getElement() {
@@ -21,11 +19,5 @@ public class Contact {
     }
     public void setContact(String contact) {
         this.contact = contact;
-    }
-    public int getType() {
-        return type;
-    }
-    public void setType(int type) {
-        this.type = type;
     }
 }

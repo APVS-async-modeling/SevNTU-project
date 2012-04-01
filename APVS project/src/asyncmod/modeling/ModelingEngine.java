@@ -12,7 +12,8 @@ import org.yaml.snakeyaml.Yaml;
 
 public class ModelingEngine implements Runnable {
     private Scheme scheme;
-    private Signal signal;
+    private SignalBundle inputs;
+    private SignalBundle results;
     private Library library;
     
     private long timecnt;
@@ -55,7 +56,17 @@ public class ModelingEngine implements Runnable {
             e.printStackTrace();
         }
         try {
-            this.signal = (Signal) yaml.load(stream);
+            Iterable<Object> data = yaml.loadAll(stream);
+            if (data.iterator().hasNext()) {
+                this.endtime = (Long) data.iterator().next();
+            } else {
+                throw new Exception("Ќеверный формат файла сигналов, отсутсвует указание времени моделировани€");
+            }
+            if (data.iterator().hasNext()) {
+                this.inputs = (SignalBundle) data.iterator().next();
+            } else {
+                throw new Exception("Ќеверный формат файла сигналов, проблема с документом сигналов");
+            }
         } catch(Exception e) {
             e.printStackTrace();
             System.err.println("Ќеверный документ сигналов!  уда лез, криворукий пидорас?");
@@ -68,6 +79,7 @@ public class ModelingEngine implements Runnable {
     }
     
     public void run() {
+        timecnt = 0;
         // TODO: моделирование
     }
 
