@@ -45,7 +45,6 @@ public class TimeDiagramsWindow extends Dialog {
     public Object open(final int coordX, final int coordY) {
         createContents(coordX, coordY);
         timeDiagramsShell.addListener(SWT.Traverse, new Listener() {
-            @Override
             public void handleEvent(final Event event) {
                 // avoid to close time diagrams window by Esc key )
                 if (event.character == SWT.ESC) {
@@ -54,14 +53,11 @@ public class TimeDiagramsWindow extends Dialog {
             }
         });
         timeDiagramsShell.addControlListener(new ControlListener() {
-
-            @Override
             public void controlResized(final ControlEvent e) {
                 WIDTH = timeDiagramsShell.getSize().x;
                 HEIGHT = timeDiagramsShell.getSize().y;
             }
 
-            @Override
             public void controlMoved(final ControlEvent e) {
 
             }
@@ -102,7 +98,6 @@ public class TimeDiagramsWindow extends Dialog {
      */
     private void createContents(int coordX, int coordY) {
         timeDiagramsShell = new Shell(getParent(), SWT.BORDER | SWT.RESIZE | SWT.TITLE);
-        timeDiagramsShell.setModified(true);
         timeDiagramsShell.setBounds(coordX, coordY, WIDTH, HEIGHT);
         timeDiagramsShell.setText("Time Diagrams Window");
         timeDiagramsShell.setLayout(new BorderLayout(0, 0));

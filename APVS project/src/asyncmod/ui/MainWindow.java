@@ -135,12 +135,10 @@ public class MainWindow {
         shell.setLayout(new FillLayout(SWT.HORIZONTAL));
 
         shell.addControlListener(new ControlListener() {
-            @Override
             public void controlResized(final ControlEvent e) {
                 updateTimeDiagramsWindowPosition();
             }
 
-            @Override
             public void controlMoved(final ControlEvent e) {
                 updateTimeDiagramsWindowPosition();
             }
