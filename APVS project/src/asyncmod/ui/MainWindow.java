@@ -1,6 +1,7 @@
 package asyncmod.ui;
 
 import java.io.File;
+import java.io.IOException;
 import java.text.SimpleDateFormat;
 import java.util.Calendar;
 
@@ -12,6 +13,7 @@ import org.eclipse.swt.events.SelectionAdapter;
 import org.eclipse.swt.events.SelectionEvent;
 import org.eclipse.swt.graphics.Point;
 import org.eclipse.swt.layout.FillLayout;
+import org.eclipse.swt.layout.GridData;
 import org.eclipse.swt.layout.GridLayout;
 import org.eclipse.swt.layout.RowLayout;
 import org.eclipse.swt.widgets.Button;
@@ -20,6 +22,7 @@ import org.eclipse.swt.widgets.Display;
 import org.eclipse.swt.widgets.ExpandBar;
 import org.eclipse.swt.widgets.ExpandItem;
 import org.eclipse.swt.widgets.FileDialog;
+import org.eclipse.swt.widgets.Group;
 import org.eclipse.swt.widgets.Label;
 import org.eclipse.swt.widgets.Menu;
 import org.eclipse.swt.widgets.MenuItem;
@@ -27,61 +30,85 @@ import org.eclipse.swt.widgets.MessageBox;
 import org.eclipse.swt.widgets.Shell;
 import org.eclipse.swt.widgets.TabFolder;
 import org.eclipse.swt.widgets.TabItem;
+import org.eclipse.swt.widgets.Table;
+import org.eclipse.swt.widgets.TableColumn;
+import org.eclipse.swt.widgets.TableItem;
 import org.eclipse.swt.widgets.Text;
 
 import swing2swt.layout.BorderLayout;
 import asyncmod.about.AboutProgram;
 import asyncmod.about.AboutTeam;
+import asyncmod.du_model.DUModel;
+import asyncmod.du_model.DUModelController;
 import asyncmod.ui.timediagrams.TimeDiagramsWindow;
-import org.eclipse.swt.layout.GridData;
 
+/**
+ * The Class MainWindow.
+ */
 public class MainWindow {
 
-    // UI!
-    // 
-
-    protected Shell shell;
+    // UI fields!
+    //
+    
+    protected Shell shell;    
     protected Display display;
     // sizes
-    private static final int WIDTH = 785;
+    private static final int WIDTH = 750;
     private static final int HEIGHT = 518;
+
+    private TimeDiagramsWindow timeDiagramsWindow;
+
     // buttons
-    private Button initialStateBtn;
+    private Button initialStateBtn;    
     private Button stepBtn;
     private Button fullRunBtn;
     private Button runUntilBtn;
     private Button timeDiagramsBtn;
+
     // text fields
     private static Text statusPanel;
     private static Text modelingResultsText;
     private static Text errorsText;
     private static Text warningText;
     private static Text fullLogText;
-    private TimeDiagramsWindow timeDiagramsWindow;
-    // file dialogs
-    private FileDialog dlgLibrary;
-    private FileDialog dlgDiscreteModel;
-    private FileDialog dlgSignals;
 
-    // Non - UI!
-    //
-
-    //files
-    private File libraryFile;
-    private File discreteModelFile;
-    private File signalsFile;
-    // etc
-    private final static Calendar cal = Calendar.getInstance();
-    static SimpleDateFormat dateFormatter = new SimpleDateFormat("HH:mm:ss '('yyyy.MM.dd')'");
+    //tables
+    private static Table tableActiveElements;
+    private static Table tableEvents;
+    private static Table tableSignals;
+    
+    // menu items
     private MenuItem resetMenuItem;
     private MenuItem runUntilMenuItem;
     private MenuItem fullRunMenuItem;
     private MenuItem stepMenuItem;
 
+    // file dialogs
+    private FileDialog dlgLibrary;
+    private FileDialog dlgDiscreteModel;
+    private FileDialog dlgSignals;    
+    private FileDialog dlgResultsSaving;
+
+    // Non-UI fields!
+    //
+
+    //files
+    private static File libraryFile;
+    private static File discreteModelFile;
+    private static File signalsFile;
+    
+    // etc
+    private final static Calendar cal = Calendar.getInstance();
+    static SimpleDateFormat dateFormatter = new SimpleDateFormat("HH:mm:ss '('yyyy.MM.dd')'");
+    
+    private Text modelingTimeText;
+    
+
+    
     /**
      * Launch the application.
-     * 
-     * @param args
+     *
+     * @param args the arguments
      */
     public static void main(String[] args) {
         try {
@@ -111,9 +138,10 @@ public class MainWindow {
     }
 
     private void configureFileDialogs() {
-        dlgDiscreteModel = new FileDialog(shell, SWT.SINGLE);
-        dlgLibrary = new FileDialog(shell, SWT.SINGLE);
-        dlgSignals = new FileDialog(shell, SWT.SINGLE);
+        dlgDiscreteModel = new FileDialog(shell, SWT.OPEN | SWT.SINGLE);
+        dlgLibrary = new FileDialog(shell, SWT.OPEN | SWT.SINGLE);
+        dlgSignals = new FileDialog(shell, SWT.OPEN| SWT.SINGLE);
+        dlgResultsSaving = new FileDialog(shell, SWT.SAVE | SWT.SINGLE);
         
         dlgDiscreteModel.setFilterExtensions(new String[] { "*.du;"});
         dlgDiscreteModel.setFilterNames(new String[] { "Discrete Unit files (*.du;)" });
@@ -123,13 +151,14 @@ public class MainWindow {
         
         dlgSignals.setFilterExtensions(new String[] { "*.sig;"});
         dlgSignals.setFilterNames(new String[] { "Signals files (*.sig;)" });
+        
+        dlgResultsSaving.setFilterExtensions(new String[] { "*.res;"});
+        dlgResultsSaving.setFilterNames(new String[] { "Modeling results file (*.res;)" });
     }
 
-    /**
-     * Create contents of the window.
-     */
     protected final void createContents() {
         shell = new Shell();
+        shell.setMinimumSize(new Point(500, 390));
         shell.setSize(WIDTH, HEIGHT);
         shell.setText("APVS async modeling project");
         shell.setLayout(new FillLayout(SWT.HORIZONTAL));
@@ -183,8 +212,8 @@ public class MainWindow {
             public void widgetSelected(final SelectionEvent e) {
                 final String libraryFilePath = dlgLibrary.open();
                 if (libraryFilePath != null) {
-                    libraryFile = new File(libraryFilePath);   
-                    openDiscreteModelMenuItem.setEnabled(true);
+                    libraryFile = new File(libraryFilePath);  
+                    openDiscreteModelMenuItem.setEnabled(true);                    
                     String message = Messages.LIBRARY_FILE_SELECTED + libraryFilePath;
                     status(message);
                 } else {
@@ -192,16 +221,25 @@ public class MainWindow {
                 }
             }
         });
-        
+
         openDiscreteModelMenuItem.addSelectionListener(new SelectionAdapter() {
             @Override
             public void widgetSelected(final SelectionEvent e) {
                 final String discreteModelFilePath = dlgDiscreteModel.open();
                 if (discreteModelFilePath != null) {
-                    discreteModelFile = new File(discreteModelFilePath);
+                    libraryFile = new File(discreteModelFilePath);
+                    DUModelController controller = new DUModelController(discreteModelFilePath);
+                    try {
+                        DUModel model = controller.parseDUModelFromFile();
+                    } catch (IOException exc) {
+                        showMessage(exc.getMessage(), "Warning");
+                    }
+                    // TODO: show info about DU model in UI!
+
                     openSignalsFileMenuItem.setEnabled(true);
-                    String message = Messages.DISCRETE_MODEL_FILE_SELECTED + discreteModelFilePath;
-                    status(message);                    
+
+                    final String message = Messages.DISCRETE_MODEL_FILE_SELECTED + discreteModelFilePath;
+                    status(message);
                 } else {
                     status(Messages.DISCRETE_MODEL_FILE_NOT_SELECTED);
                 }
@@ -230,6 +268,17 @@ public class MainWindow {
         mntmSave.setMenu(menu_5);
 
         MenuItem mntmSaveModelingResults = new MenuItem(menu_5, SWT.NONE);
+        mntmSaveModelingResults.addSelectionListener(new SelectionAdapter() {
+            @Override
+            public void widgetSelected(SelectionEvent e) {
+                String fileToResultsSavingPath = dlgResultsSaving.open();
+                if(fileToResultsSavingPath != null){
+                    status(Messages.RESULTS_SAVED);
+                } else {
+                    status(Messages.RESULTS_NOT_SAVED);
+                }
+            }
+        });
         mntmSaveModelingResults.setText("Save modeling results...");
 
         MenuItem mntmClose = new MenuItem(menu_1, SWT.NONE);
@@ -322,7 +371,14 @@ public class MainWindow {
 
         timeDiagramsBtn = new Button(ControlButtonsComposite, SWT.NONE);
         timeDiagramsBtn.setText("Time diagrams...");
-        timeDiagramsBtn.setEnabled(false);
+        
+        Label lblModelingTime = new Label(ControlButtonsComposite, SWT.NONE);
+        lblModelingTime.setEnabled(false);
+        lblModelingTime.setAlignment(SWT.CENTER);
+        lblModelingTime.setText("Modeling Time:");
+        
+        modelingTimeText = new Text(ControlButtonsComposite, SWT.BORDER);
+        modelingTimeText.setEditable(false);
         timeDiagramsBtn.addSelectionListener(new SelectionAdapter() {
             @Override
             public void widgetSelected(SelectionEvent e) {
@@ -363,11 +419,84 @@ public class MainWindow {
         item1.setHeight(composite.computeSize(SWT.DEFAULT, SWT.DEFAULT).y);
         item1.setControl(composite);
 
-        bar.setSpacing(6);
+        bar.setSpacing(5);
 
-        Composite modelingStateComposite = new Composite(sashForm, SWT.NONE);
-        sashForm.setWeights(new int[] { 1, 3 });
-
+        Composite modelingStateComposite = new Composite(sashForm, SWT.BORDER);
+        modelingStateComposite.setLayout(new GridLayout(3, false));
+        
+        Group grpActiveElementsList = new Group(modelingStateComposite, SWT.NONE);
+        grpActiveElementsList.setToolTipText(Messages.TOOLTIP_ACTIVE_ELEMENTS_TABLE);
+        GridData gd_grpActiveElementsList = new GridData(SWT.FILL, SWT.FILL, true, true, 1, 1);
+        gd_grpActiveElementsList.widthHint = 179;
+        gd_grpActiveElementsList.heightHint = 375;
+        grpActiveElementsList.setLayoutData(gd_grpActiveElementsList);
+        grpActiveElementsList.setText("Active elements");
+        grpActiveElementsList.setLayout(new FillLayout(SWT.HORIZONTAL));
+        
+        tableActiveElements = new Table(grpActiveElementsList, SWT.BORDER | SWT.FULL_SELECTION | SWT.FILL);
+        tableActiveElements.setToolTipText(Messages.TOOLTIP_ACTIVE_ELEMENTS_TABLE);
+        tableActiveElements.setLinesVisible(true);
+        tableActiveElements.setHeaderVisible(true);
+        
+        TableColumn tblclmnNewColumn = new TableColumn(tableActiveElements, SWT.CENTER);
+        tblclmnNewColumn.setWidth(76);
+        tblclmnNewColumn.setText("Element num");        
+        
+        TableColumn tblclmnNewColumn_1 = new TableColumn(tableActiveElements, SWT.CENTER);
+        tblclmnNewColumn_1.setWidth(55);
+        tblclmnNewColumn_1.setText("is Active");
+        
+        Group grpActionsTable = new Group(modelingStateComposite, SWT.NONE);
+        grpActionsTable.setText("Events");
+        grpActionsTable.setToolTipText(Messages.TOOLTIP_EVENTS_TABLE);
+        GridData gd_grpActionsTable = new GridData(SWT.FILL, SWT.FILL, true, true, 1, 1);
+        gd_grpActionsTable.heightHint = 375;
+        gd_grpActionsTable.widthHint = 302;
+        grpActionsTable.setLayoutData(gd_grpActionsTable);
+        grpActionsTable.setLayout(new FillLayout(SWT.HORIZONTAL));
+                
+        tableEvents = new Table(grpActionsTable, SWT.BORDER | SWT.FULL_SELECTION);
+        tableEvents.setToolTipText(Messages.TOOLTIP_EVENTS_TABLE);
+        tableEvents.setLinesVisible(true);
+        tableEvents.setHeaderVisible(true);
+        
+        TableColumn tblclmnNewColumn_2 = new TableColumn(tableEvents, SWT.CENTER);
+        tblclmnNewColumn_2.setWidth(89);
+        tblclmnNewColumn_2.setText("Time");
+        
+        TableColumn tableColumn = new TableColumn(tableEvents, SWT.CENTER);
+        tableColumn.setWidth(82);
+        tableColumn.setText("Element num");
+        
+        TableColumn tblclmnContactNum = new TableColumn(tableEvents, SWT.CENTER);
+        tblclmnContactNum.setWidth(82);
+        tblclmnContactNum.setText("Contact num");
+        
+        Group grpSignalsMatrix = new Group(modelingStateComposite, SWT.NONE);
+        grpSignalsMatrix.setToolTipText(Messages.TOOLTIP_SIGNALS_MATRIX);
+        GridData gd_grpSignalsMatrix = new GridData(SWT.FILL, SWT.FILL, true, true, 1, 1);
+        gd_grpSignalsMatrix.heightHint = 375;
+        gd_grpSignalsMatrix.widthHint = 170;
+        grpSignalsMatrix.setLayoutData(gd_grpSignalsMatrix);
+        grpSignalsMatrix.setText("Signals");
+        grpSignalsMatrix.setLayout(new FillLayout(SWT.HORIZONTAL));
+                        
+        tableSignals = new Table(grpSignalsMatrix, SWT.BORDER | SWT.FULL_SELECTION);
+        tableSignals.setToolTipText(Messages.TOOLTIP_SIGNALS_MATRIX);
+        tableSignals.setLinesVisible(true);
+        tableSignals.setHeaderVisible(true);       
+        
+        TableColumn tblclmnCurcuit = new TableColumn(tableSignals, SWT.CENTER);
+        tblclmnCurcuit.setWidth(63);
+        tblclmnCurcuit.setText("Curcuit");
+        
+        TableColumn tblclmnSignal = new TableColumn(tableSignals, SWT.CENTER);
+        tblclmnSignal.setWidth(57);
+        tblclmnSignal.setText("Signal");
+        
+        
+        sashForm.setWeights(new int[] { 1, 4 });
+        
         TabItem LogTab = new TabItem(mainWindowTabFolder, SWT.NONE);
         LogTab.setText("Additional");
 
@@ -419,10 +548,11 @@ public class MainWindow {
         fullLogText = new Text(fullLogComposite, SWT.BORDER | SWT.READ_ONLY | SWT.WRAP | SWT.MULTI);
         fullLogText.setEditable(false);
         
-        setModelingButtonsAndMenuEnabled(false);
+        setModelingButtonsAndMenuEnabled(false);       
+        
     }
 
-    public final Point getRightUpperCornerPosition() {
+    private final Point getRightUpperCornerPosition() {
         int coordX = shell.getBounds().x + shell.getBounds().width;
         int coordY = shell.getBounds().y;
         Point point = new Point(coordX, coordY);
@@ -435,7 +565,8 @@ public class MainWindow {
         stepBtn.setEnabled(state);
         fullRunBtn.setEnabled(state);
         runUntilBtn.setEnabled(state);
-        timeDiagramsBtn.setEnabled(state);
+        // TODO: block timeDiagramsBtn wuth another buttons when done
+        timeDiagramsBtn.setEnabled(true);
         
         // menus:
         stepMenuItem.setEnabled(state);
@@ -444,41 +575,64 @@ public class MainWindow {
         resetMenuItem.setEnabled(state);
     }
     
-    public void showMessage(final String text, final String type) {
-
+    /**
+     * Shows the message window.
+     * 
+     * @param text the text
+     * @param type the type of message ("Warning" | "Information").
+     */
+    public static void showMessage(final String text, final String type) {
         int msgWindowType = 0;
-
-        if (type.equals("Alert")) {
+        if (type.equals("Warning")) {
             msgWindowType |= SWT.ICON_WARNING;
             addError(text);
         }
         if (type.equals("Information")) {
             msgWindowType |= SWT.ICON_INFORMATION;
-            addToLog(text);            
+            addToLog(text);
         }
-
-        MessageBox box = new MessageBox(shell, msgWindowType);
+        MessageBox box = new MessageBox(Display.getDefault().getShells()[0], msgWindowType);
         box.setMessage(text);
         box.open();
     }
-       
-    public static void status(String str){
+
+    /**
+     * Sets the status panel text.
+     *
+     * @param str the input string to set as status.
+     */
+    public static void status(String str) {
         statusPanel.setText(str);
         addToLog("[Status] " + str);
     }
 
+    /**
+     * Adds the warning to the "Warnings" text field.
+     *
+     * @param str the input string.
+     */
     public static void addWarning(String str) {           
         warningText.append(dateFormatter.format(cal.getTime())+ ": "+str + "\n");
         appendLineDelimiter(warningText);
         addToLog("[Warning] " + str);
     }
 
+    /**
+     * Adds the input string to the "Errors" textField.
+     *
+     * @param str the input string.
+     */
     public static void addError(String str) {           
         errorsText.append(dateFormatter.format(cal.getTime())+ ": "+str + "\n");
         appendLineDelimiter(errorsText);
         addToLog("[Error] " + str);
     }
 
+    /**
+     * Adds the input string to the "Logs" textField.
+     *
+     * @param str the input string.
+     */
     public static void addToLog(String str) {     
         fullLogText.append(dateFormatter.format(cal.getTime())+ ": "+str + "\n");
         appendLineDelimiter(fullLogText);        
@@ -490,4 +644,64 @@ public class MainWindow {
 //        }
 //        textField.append("\n");
     }
+
+    public static File getDiscreteModelFile() {
+        return discreteModelFile;
+    }
+
+    public static File getSignalsFile() {
+        return signalsFile;
+    }
+
+    public static File getLibraryFile() {
+        return libraryFile;
+    }
+    
+    /**
+     * Sets the active elements table values.
+     *
+     * @param values the new active elements table values
+     */
+    public static void setActiveElementsTableValues(String [][] values) {       
+        setTableValues(tableActiveElements, values);
+    }
+
+    /**
+     * Sets the actions table values.
+     *
+     * @param values the new actions table values
+     */
+    public static void setEventsTableValues(String [][] values) {
+        setTableValues(tableEvents, values);    
+    }
+
+    /**
+     * Sets the signals table values.
+     *
+     * @param values the new signals table values
+     */
+    public static void setSignalsTableValues(String [][] values) {
+        setTableValues(tableSignals, values);
+    }
+
+    /**
+     * Sets the table values.
+     *
+     * @param table the table
+     * @param values the values
+     */
+    private static void setTableValues(Table table, String[][] values) {
+        try {
+            int count = 0;
+            table.setItemCount(values.length);
+            System.out.println(table.getItems());
+            for (TableItem item : table.getItems()) {
+                item.setText(values[count]);
+                count++;
+            }
+        } catch (IndexOutOfBoundsException e) {
+            showMessage("������ ����������� ����� �������� ������ � �������: " + table.getToolTipText(), "Warning");
+        }
+    }
+
 }

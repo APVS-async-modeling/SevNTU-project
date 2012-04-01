@@ -2,24 +2,27 @@ package asyncmod.ui.timediagrams;
 
 import org.eclipse.swt.SWT;
 import org.eclipse.swt.custom.SashForm;
+import org.eclipse.swt.custom.ScrolledComposite;
 import org.eclipse.swt.events.ControlEvent;
 import org.eclipse.swt.events.ControlListener;
+import org.eclipse.swt.events.PaintEvent;
+import org.eclipse.swt.events.PaintListener;
 import org.eclipse.swt.events.SelectionEvent;
 import org.eclipse.swt.events.SelectionListener;
-import org.eclipse.swt.widgets.Canvas;
+import org.eclipse.swt.graphics.GC;
 import org.eclipse.swt.widgets.Dialog;
 import org.eclipse.swt.widgets.Display;
 import org.eclipse.swt.widgets.Event;
+import org.eclipse.swt.widgets.Label;
 import org.eclipse.swt.widgets.Listener;
-import org.eclipse.swt.widgets.Scale;
 import org.eclipse.swt.widgets.Shell;
 import org.eclipse.swt.widgets.Tree;
 import org.eclipse.swt.widgets.TreeItem;
 
+import swing2swt.layout.BorderLayout;
 import asyncmod.ui.MainWindow;
 import asyncmod.ui.Messages;
-
-import swing2swt.layout.BorderLayout;
+import org.eclipse.swt.graphics.Point;
 
 public class TimeDiagramsWindow extends Dialog {
 
@@ -48,11 +51,13 @@ public class TimeDiagramsWindow extends Dialog {
             public void handleEvent(final Event event) {
                 // avoid to close time diagrams window by Esc key )
                 if (event.character == SWT.ESC) {
+                    hide();
                     event.doit = false;
                 }
             }
         });
         timeDiagramsShell.addControlListener(new ControlListener() {
+
             public void controlResized(final ControlEvent e) {
                 WIDTH = timeDiagramsShell.getSize().x;
                 HEIGHT = timeDiagramsShell.getSize().y;
@@ -98,24 +103,48 @@ public class TimeDiagramsWindow extends Dialog {
      */
     private void createContents(int coordX, int coordY) {
         timeDiagramsShell = new Shell(getParent(), SWT.BORDER | SWT.RESIZE | SWT.TITLE);
+        timeDiagramsShell.setMinimumSize(new Point(300, 300));
         timeDiagramsShell.setBounds(coordX, coordY, WIDTH, HEIGHT);
         timeDiagramsShell.setText("Time Diagrams Window");
         timeDiagramsShell.setLayout(new BorderLayout(0, 0));
-
-        Scale scale = new Scale(timeDiagramsShell, SWT.NONE);
-        scale.setLayoutData(BorderLayout.SOUTH);
-
+        
         SashForm sashForm = new SashForm(timeDiagramsShell, SWT.NONE);
         sashForm.setLayoutData(BorderLayout.CENTER);
-
-        Canvas canvas = new Canvas(sashForm, SWT.NONE);
-
+        
+        ScrolledComposite scrolledComposite = new ScrolledComposite(sashForm, SWT.BORDER | SWT.H_SCROLL | SWT.V_SCROLL);
+        scrolledComposite.setExpandHorizontal(true);
+        scrolledComposite.setExpandVertical(true);
+        
+        final Label label = new Label(scrolledComposite, SWT.NONE);
+        scrolledComposite.setContent(label);
+        scrolledComposite.setMinSize(label.computeSize(SWT.DEFAULT, SWT.DEFAULT));
+               
+        label.addPaintListener(new PaintListener() {
+            public void paintControl(PaintEvent event) {
+                
+                GC gc = event.gc;
+                gc.drawText("Time diagrams will be here =) Field size: "+ event.height + " x " +event.width, 50, 190);
+                gc.dispose();
+            }
+        });
+        
+        timeDiagramsShell.addControlListener(new ControlListener() {
+            
+            public void controlResized(ControlEvent arg0) {
+                 label.redraw();
+            }
+            
+            public void controlMoved(ControlEvent arg0) {
+                label.redraw();             
+            }
+        });
+        
         Tree tree = new Tree(sashForm, SWT.BORDER | SWT.CHECK | SWT.FULL_SELECTION);
         tree.setHeaderVisible(true);
         tree.setLinesVisible(true);
 
         initializeTree(tree);
-        sashForm.setWeights(new int[] { 4, 1 });
+        sashForm.setWeights(new int[] { 2, 1 });
 
     }
 
