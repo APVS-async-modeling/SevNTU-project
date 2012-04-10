@@ -1,18 +1,24 @@
 package asyncmod.modeling;
 
 public class Element {
-    private String name;
-    private String descr;
-    private long delay;
-    private int icnt;
-    private int ocnt;
-    private int ecnt;
-    private int smask;
-    private Integer[][] table;
+    protected String name;
+    protected String descr;
+    protected long delay;
+    protected int icnt;
+    protected int ocnt;
+    protected int ecnt;
+    protected int smask;
+    protected String[] cnames;
+    protected Integer[][] table;
     
     public Element() {
         delay = icnt = ocnt = ecnt = smask = -1;
+        cnames = null;
         table = null;
+    }
+    
+    public void process(int[] array) {
+        
     }
     
     public boolean checkIntegrity(String message) {
@@ -24,15 +30,16 @@ public class Element {
         if(ecnt == -1) return false;
         if(smask == -1) return false;
         if(table == null) return false;
+        if(cnames == null) return false;
         
         int columns = icnt + ocnt * 2  + ecnt;
-        int rows = (int)Math.pow(Integer.bitCount(smask), icnt + ecnt);
+        int rows = (int)Math.pow(Integer.bitCount(smask) + 1, icnt + ecnt);
         
         if(table.length != rows) return false;
+        if(cnames.length != columns) return false;
         for(Integer[] row : table) {
             if(row.length != columns) return false;
         }
-        
         return true;
     }
     
@@ -77,6 +84,12 @@ public class Element {
     }
     public void setSmask(int smask) {
         this.smask = smask;
+    }
+    public String[] getCnames() {
+        return cnames;
+    }
+    public void setCnames(String[] cnames) {
+        this.cnames = cnames;
     }
     public Integer[][] getTable() {
         return table;

@@ -4,7 +4,7 @@ import java.util.LinkedList;
 import java.util.List;
 
 public class Circuit {
-    private List<Contact> contacts;
+    protected List<Contact> contacts;
     
     public Circuit() {
         contacts = new LinkedList<Contact>();
@@ -17,5 +17,4 @@ public class Circuit {
     public void setContacts(List<Contact> contacts) {
         this.contacts = contacts;
     }
-
 }

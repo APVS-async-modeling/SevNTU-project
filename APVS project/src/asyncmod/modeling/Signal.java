@@ -4,33 +4,47 @@ import java.util.NavigableMap;
 import java.util.TreeMap;
 
 public class Signal {
-    NavigableMap<Long, Integer> states;
+    protected NavigableMap<Long, Integer> signal;
     
     public Signal() {
-        states = new TreeMap<Long, Integer>();
+        signal = new TreeMap<Long, Integer>();
     }
     
-    public int getState(long time) {
-        Long key = states.floorKey(time);
-        return key == null ? -1 : states.get(key);
+    public Integer getState(Number time) {
+        Long key = (Long) time;
+        key = (signal.floorKey((Long) key));
+        return key == null ? -1 : signal.get(key);
     }
     
-    public boolean isPredefined(long time) {
+    public boolean isPredefined(Number time) {
         return isPredefined(getState(time));
     }
     
-    public boolean isPredefined(int state) {
+    public boolean isPredefined(Integer state) {
         if (state == -1) return false; 
-        return (state & 0xF0) == 0xF0 ? true : false;
+        return (state & 0x0100) == 0x0100 ? true : false;
     }
 
-    public NavigableMap<Long, Integer> getStates() {
-        return states;
-    }
-
-    public void setStates(NavigableMap<Long, Integer> states) {
-        this.states = states;
+    public String[] getSignal() {
+        String[] array = new String[signal.size()];
+        int n = 0;
+        for(Long key : signal.keySet()) {
+            array[n] = key.longValue() + "=" + signal.get(key);
+            n++;
+        }
+        return array;
     }
     
+    public void setSignal(String[] array) {
+        for(int n = 0; n < array.length; n++) {
+            Long time = Long.parseLong(array[n].substring(0, array[n].indexOf('=')));
+            Integer state = Integer.parseInt(array[n].substring(array[n].indexOf('=') + 1));
+            signal.put(time, state);
+        }
+    }
+    
+    public String toString() {
+        return signal.toString();
+    }
 
 }

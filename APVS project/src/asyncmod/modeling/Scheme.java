@@ -7,10 +7,10 @@ import java.util.Map;
 
 public class Scheme {
     
-    private Map<String, String> elements;
-    private Map<String, Circuit> circuits;
-    private List<String> inputs;
-    private List<String> outputs;
+    protected Map<String, String> elements;
+    protected Map<String, Circuit> circuits;
+    protected List<String> inputs;
+    protected List<String> outputs;
     
     public Scheme() {
         elements = new LinkedHashMap<String, String>();

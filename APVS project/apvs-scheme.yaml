@@ -1,14 +1,66 @@
 !!asyncmod.modeling.Scheme
 circuits:
-  circ_02:
-    contacts: []
-  circ_03:
-    contacts: []
-  circ_01:
+  C_01:
     contacts:
-    - {contact: '1', element: elem_01, type: 1}
-  circ_04:
-    contacts: []
-elements: {elem_01: 2_AND, elem_02: 2_OR}
-inputs: [circ_01, circ_02]
-outputs: [circ_04]
+    - [J_IN, -1]
+    - [1STU, 1]
+  C_02:
+    contacts:
+    - [C_IN, -1]
+    - [1STU, 2]
+    - [1STL, 0]
+  C_03:
+    contacts:
+    - [K_IN, -1]
+    - [1STL, 1]
+  C_04:
+    contacts:
+    - [1STU, 3]
+    - [2STU, 0]
+    - [3STU, 0]
+  C_05:
+    contacts: 
+    - [1STL, 3]
+    - [2STL, 1]
+    - [3STL, 1]
+  C_06:
+    contacts:
+    - [2STU, 2]
+    - [3STU, 1]
+    - [2STL, 0]
+  C_07:
+    contacts:
+    - [2STL, 2]
+    - [3STL, 0]
+    - [2STU, 1]
+  C_08:
+    contacts:
+    - [3STU, 2]
+    - [4STU, 0]
+  C_09:
+    contacts:
+    - [3STL, 2]
+    - [4STL, 1]
+  C_10:
+    contacts:
+    - [4STU, 2]
+    - [1STL, 2]
+    - [4STL, 0]
+    - [Q_OUT, -1]
+  C_11:
+    contacts:
+    - [4STL, 2]
+    - [1STU, 0]
+    - [4STU, 1]
+    - [NQ_OUT, -1]
+elements:
+  1STU: 3_AND
+  1STL: 3_AND
+  2STU: 2_AND
+  2STL: 2_AND
+  3STU: 2_AND
+  3STL: 2_AND
+  4STU: 2_AND
+  4STL: 2_AND
+inputs: [J_IN, C_IN, K_IN]
+outputs: [Q_OUT, NQ_OUT]
