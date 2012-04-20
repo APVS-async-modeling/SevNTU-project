@@ -4,25 +4,34 @@ import java.util.NavigableMap;
 import java.util.TreeMap;
 
 public class Signal {
+    /*
+     * signals
+     * 0x00 = 0
+     * 0x01 = 1
+     * 0x02 = X
+     * 0xF0 = p0
+     * 0xF1 = p1
+     * 0xF2 = pX
+     */
+    
     protected NavigableMap<Long, Integer> signal;
     
     public Signal() {
         signal = new TreeMap<Long, Integer>();
     }
     
-    public Integer getState(Number time) {
+    public Integer getState(long time) {
         Long key = (Long) time;
         key = (signal.floorKey((Long) key));
         return key == null ? -1 : signal.get(key);
     }
     
-    public boolean isPredefined(Number time) {
+    public boolean isPredefined(long time) {
         return isPredefined(getState(time));
     }
     
-    public boolean isPredefined(Integer state) {
-        if (state == -1) return false; 
-        return (state & 0x0100) == 0x0100 ? true : false;
+    public boolean isPredefined(int state) {
+        return (state & 0xF0) == 0xF0 ? true : false;
     }
 
     public String[] getSignal() {

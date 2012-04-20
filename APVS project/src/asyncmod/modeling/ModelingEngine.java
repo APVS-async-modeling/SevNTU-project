@@ -1,22 +1,19 @@
 package asyncmod.modeling;
 
-import java.util.HashMap;
+import java.io.BufferedWriter;
+import java.io.FileInputStream;
+import java.io.FileNotFoundException;
+import java.io.FileWriter;
+import java.io.IOException;
+import java.io.InputStream;
 import java.util.LinkedList;
 import java.util.List;
-import java.util.Map.Entry;
 import java.util.NavigableMap;
 import java.util.Set;
 import java.util.TreeMap;
 import java.util.TreeSet;
-import java.io.File;
-import java.io.FileInputStream;
-import java.io.FileNotFoundException;
-import java.io.InputStream;
-import java.util.Map;
 
-import org.yaml.snakeyaml.TypeDescription;
 import org.yaml.snakeyaml.Yaml;
-import org.yaml.snakeyaml.constructor.Constructor;
 
 
 public class ModelingEngine implements Runnable {
@@ -30,230 +27,270 @@ public class ModelingEngine implements Runnable {
     private NavigableMap<Long, List<Event>> events;
     private NavigableMap<Long, Set<String>> active;
     
-    public ModelingEngine(String library, String scheme, String signal, long time) {
+    
+    String diagrams, logs;
+    
+    public ModelingEngine(String library, String scheme, String signals, String diagrams, String logs) throws ModelingException {
         Yaml yaml = new Yaml();
         InputStream stream = null;
-        endtime = time;
+        this.diagrams = diagrams;
+        this.logs = logs;
         
         try {
             stream = new FileInputStream(library);
         } catch (FileNotFoundException e) {
-            e.printStackTrace();
+            throw new ModelingException(0x01, library);
         }
         try {
             this.library = (Library) yaml.load(stream);
         } catch(Exception e) {
-            e.printStackTrace();
-            System.err.println("Неверный документ библиотеки!");
+            throw new ModelingException(0x10);
         }
-        System.out.println(yaml.dump(this.library));
         
         try {
             stream = new FileInputStream(scheme);
         } catch (FileNotFoundException e) {
-            e.printStackTrace();
+            throw new ModelingException(0x01, scheme);
         }
         try {
             this.scheme = (Scheme) yaml.load(stream);
         } catch(Exception e) {
-            e.printStackTrace();
-            System.err.println("Неверный документ схемы!");
+            throw new ModelingException(0x11);
         }
-        System.out.println(yaml.dump(this.scheme));
         
         try {
-            stream = new FileInputStream(signal);
+            stream = new FileInputStream(signals);
         } catch (FileNotFoundException e) {
-            e.printStackTrace();
+            throw new ModelingException(0x01, signals);
         }
         try {
             this.signals = (SignalBundle) yaml.load(stream);
         } catch(Exception e) {
-            e.printStackTrace();
-            System.err.println("Неверный документ сигналов!");
+            throw new ModelingException(0x12);
         }
-        System.out.println(yaml.dump(this.signals));
     }
     
     public static void main(String[] args) {
-        new ModelingEngine("apvs-library.yaml", "apvs-scheme.yaml", "apvs-signal.yaml", 3000).run();
+        try {
+            new ModelingEngine("apvs-library.yaml", "apvs-scheme.yaml", "apvs-signal.yaml", "apvs-diagrams.yaml", "apvs-logs.yaml").run();
+        } catch (ModelingException e) {
+            // TODO Auto-generated catch block
+            e.printStackTrace();
+        }
     }
-    
     public void run() {
-        timecnt = 0;
+        check();
+        try {
+            simulate();
+        } catch (IOException e) {
+            // TODO Auto-generated catch block
+            e.printStackTrace();
+        } catch (ModelingException e) {
+            // TODO Auto-generated catch block
+            e.printStackTrace();
+        }
+    }
+    private void check() {
+        // TODO Auto-generated method stub
+        
+    }
+
+    public void simulate() throws IOException, ModelingException{
         events = new TreeMap<Long, List<Event>>();
         active = new TreeMap<Long, Set<String>>();
         results = new SignalBundle();
         
-        for(Contact contact : signals.getSignals().keySet()) {
+        // converting input signals to modeling events
+        for (Contact contact : signals.getSignals().keySet()) {
             Signal signal = (Signal) signals.getSignals().get(contact);
-            for(Long time : signal.signal.keySet()) {
+            for (Long time : signal.signal.keySet()) {
                 int state = signal.getState(time);
                 if (events.containsKey(time)) {
-                    events.get(time).add(new Event(contact, state));
+                    events.get(time).add(new Event(contact, state, 0));
                 } else {
                     events.put(time, new LinkedList<Event>());
-                    events.get(time).add(new Event(contact, state));
+                    events.get(time).add(new Event(contact, state, 0));
                 }
             }
         }
+
+        // calculating end time for modeling as last event time + double delay of scheme for serial connection of all elements in it
+        timecnt = 0;
+        long latency = 0;
+        for (String elementName : scheme.elements.keySet()) {
+            Element element = library.library.get(scheme.elements.get(elementName));
+            latency += element.delay;
+        }
+        endtime = events.lastKey() + latency * 2;
         
-        /*for(String elementName : scheme.getElements().keySet()) {
-            String elementType = scheme.getElements().get(elementName);
-            Element element = elementType != null ? library.getLibrary().get(elementType) : null;
-            if(element == null) {
-                System.out.println("Unknown exception while modeling caused by broken library or scheme file");
-            } else {
-                for(int n = 0; n < element.icnt + element.ocnt; n++) {
-                    Signal signal = new Signal();
-                    signal.signal.put((long) 0, 255);
-                    results.signals.put(new Contact(elementName, n), signal);
-                }
+        // creating dummy signals for each input/output/internal contact of elements in scheme 
+        for (String elementName : scheme.getElements().keySet()) {
+            Element element = library.library.get(scheme.elements.get(elementName));
+            for (int n = 0; n < element.icnt + element.ocnt + element.ecnt; n++) {
+                Signal signal = new Signal();
+                signal.signal.put(0L, 0x02);
+                results.signals.put(new Contact(elementName, n), signal);
             }
         }
-        for(String inputName : scheme.getInputs()) {
+        for (String inputName : scheme.getInputs()) {
             Signal signal = new Signal();
-            signal.signal.put((long) 0, 255);
+            signal.signal.put(0L, 0x02);
             results.signals.put(new Contact(inputName, -1), signal);
         }
-        for(String outputName : scheme.getOutputs()) {
+        for (String outputName : scheme.getOutputs()) {
             Signal signal = new Signal();
-            signal.signal.put((long) 0, 255);
+            signal.signal.put(0L, 0x02);
             results.signals.put(new Contact(outputName, -1), signal);
-        }*/
+        }
+        
+        // buffered output streams for logging and result saving
+        BufferedWriter logwriter = new BufferedWriter(new FileWriter(logs, false));
+        BufferedWriter diawriter = new BufferedWriter(new FileWriter(diagrams, false));
         
         while(timecnt < endtime) {
-            Long curevttime = events.ceilingKey(timecnt);
-            Long curacttime = active.ceilingKey(timecnt);
-            Long curtime;
-            if(curevttime == null && curacttime != null) {
-                curtime = curacttime;
-            } else if(curevttime != null && curacttime == null) {
-                curtime = curevttime;
-            } else if(curevttime != null && curacttime != null) {
-                curtime = Math.max(curevttime, curacttime);
+            // cetime - closest key from 'events' table, represents closest event to current modeling time
+            Long cetime = events.ceilingKey(timecnt);
+            if (cetime != null) {
+                timecnt = cetime;
             } else {
                 timecnt = endtime;
                 continue;
             }
-            timecnt = curtime;
-            System.out.println("\nModeling at time " + timecnt);
-            /* выборка событий */
-            if(events.containsKey(curtime)) {
-                for(Event event : events.get(curtime)) {
-                    Contact sourceContact = event.getContact();
-                    String sourceElementName = (String) sourceContact.element;
-                    int sourceContactNumber = (Integer) sourceContact.contact;
-                    String sourceElementType = scheme.getElements().get(sourceElementName);
-                    Element sourceElement = sourceElementType != null ? library.getLibrary().get(sourceElementType) : null;
+            logwriter.write("Modeling at time " + timecnt + "\n");
+            
+            // processing events at timecnt
+            if (events.containsKey(timecnt)) {
+                for (Event event : events.get(timecnt)) {
+                    Element source = scheme.inputs.contains(event.contact.element) ? null : library.library.get(scheme.elements.get(event.contact.element));
                     
-                    if((sourceElement == null && scheme.getInputs().contains(sourceElementName)) 
-                            || (sourceElement != null && sourceContactNumber >= sourceElement.icnt && sourceContactNumber < sourceElement.icnt + sourceElement.ocnt)) {
-                        if(sourceElement == null) {
-                            System.out.println("Scheme input '" + sourceContact.element + "' is changed to " + event.newstate);
-                        } else {
-                            System.out.println("Output #" + (sourceContactNumber - sourceElement.icnt) + " of element '" + sourceElementName + "' is changed to " + event.newstate);
+                    Signal sourceSignal = results.signals.get(event.contact);
+                    if(sourceSignal.isPredefined(timecnt)) {
+                        logwriter.write("  Signal on output '" + event.contact + "' is predefined and cannot be changed\n");
+                        continue;
+                    } else if(sourceSignal.getState(timecnt) == event.newstate) {
+                        logwriter.write("  Signal on output '" + event.contact + "' is remains unchanged\n");
+                        continue;
+                    } else {
+                        sourceSignal.signal.put(timecnt, event.newstate);
+                    }
+                    
+                    if (source != null && (source.isInput(event.contact.contact) || source.isInternal(event.contact.contact))) {
+                        if (source.isInput(event.contact.contact)) {
+                            logwriter.write("  Input #" + event.contact.contact + " of element '" + event.contact.element + "' is changed to " + event.newstate + "\n");
+                        } else if (source.isInternal(event.contact.contact)) {
+                            logwriter.write("  Internal state #" + (event.contact.contact - source.icnt - source.ocnt) + " of element '" + event.contact.contact + "' is changed to " + event.newstate + "\n");
                         }
-                        Signal sourceSignal = results.signals.get(sourceContact);
-                        if(sourceSignal != null) {
-                            sourceSignal.signal.put(timecnt, event.newstate);
+                        if (active.containsKey(timecnt)) {
+                            active.get(timecnt).add(event.contact.element);
                         } else {
-                            sourceSignal = new Signal();
-                            sourceSignal.signal.put(timecnt, event.newstate);
+                            active.put(timecnt, new TreeSet<String>());
+                            active.get(timecnt).add(event.contact.element);
                         }
-                        
-                        for(String circuitName : scheme.getCircuits().keySet()) {
-                            Circuit circuit = scheme.getCircuits().get(circuitName);
-                            if(circuit.getContacts().contains(sourceContact)) {
-                                System.out.println("  Circuit '" + circuitName + "' is changed to " + event.newstate);
-                                System.out.println("    Contacts involved: " + circuit.getContacts() + "");
-                                for(Contact destinationContact : circuit.getContacts()) {
-                                    if(scheme.getOutputs().contains(destinationContact.element)) {
-                                        System.out.println("      Scheme output '" + destinationContact.element + "' is changed to " + event.newstate);
-                                    } else if(destinationContact.equals(sourceContact)) {
+                    }
+                    else {
+                        if (source == null) {
+                            logwriter.write("  Scheme input '" + event.contact.element + "' is changed to " + event.newstate + "\n");
+                        } else {
+                            logwriter.write("  Output #" + (event.contact.contact - source.icnt) + " of element '" + event.contact.element + "' is changed to " + event.newstate + "\n");
+                        }
+                        for (String circuitName : scheme.circuits.keySet()) {
+                            Circuit circuit = scheme.circuits.get(circuitName);
+                            if (circuit.contacts.contains(event.contact)) {
+                                logwriter.write("    Circuit '" + circuitName + "' is changed to " + event.newstate + "\n");
+                                logwriter.write("      Contacts involved: " + circuit.getContacts() + "\n");
+                                for (Contact destinationContact : circuit.getContacts()) {
+                                    Signal destinationSignal = results.signals.get(destinationContact);
+                                    if (destinationContact.equals(event.contact)) {
+                                        continue;
+                                    } 
+                                    else if(destinationSignal.getState(timecnt) == event.newstate) {
+                                        logwriter.write("        Signal on  '" + destinationContact + "' is remains unchanged\n");
                                         continue;
                                     } else {
-                                        String destinationElementName = (String) destinationContact.element;
-                                        String destinationElementType = scheme.getElements().get(destinationElementName);
-                                        Element destinationElement = destinationElementType != null ? library.getLibrary().get(destinationElementType) : null;
-                                        if (destinationElement == null) {
-                                            System.out.println("Unknown exception while modeling caused by broken library or scheme file");
-                                        } else if((Integer)(destinationContact.contact) < destinationElement.icnt) {
-                                            System.out.println("      Input #" + destinationContact.contact + " of element '" + destinationElementName + "' is changed to " + event.newstate);
-                                            if(active.containsKey(curtime)) {
-                                                active.get(curtime).add(destinationElementName);
-                                            } else {
-                                                active.put(curtime, new TreeSet<String>());
-                                                active.get(curtime).add(destinationElementName);
-                                            }
-                                        }
+                                        destinationSignal.signal.put(timecnt, event.newstate);
                                     }
-                                    Signal destinationSignal = results.signals.get(destinationContact);
-                                    if(destinationSignal != null) {
-                                        destinationSignal.signal.put(timecnt, event.newstate);
+                                    
+                                    if (scheme.outputs.contains(destinationContact.element)) {
+                                        logwriter.write("        Scheme output '" + destinationContact.element + "' is changed to " + event.newstate + "\n");
                                     } else {
-                                        destinationSignal = new Signal();
-                                        destinationSignal.signal.put(timecnt, event.newstate);
+                                        Element destination = library.library.get(scheme.elements.get(destinationContact.element));
+                                        if (destination.isInput(destinationContact.contact)) {
+                                            logwriter.write("        Input #" + destinationContact.contact + " of element '" + destinationContact.element + "' is changed to " + event.newstate + "\n");
+                                            if (active.containsKey(timecnt)) {
+                                                active.get(timecnt).add(destinationContact.element);
+                                            } else {
+                                                active.put(timecnt, new TreeSet<String>());
+                                                active.get(timecnt).add(destinationContact.element);
+                                            }
+                                        } else {
+                                            int ercode = destination.isOutput(destinationContact.contact) ? 0x30 : destination.isInternal(destinationContact.contact) ? 0x31 : 0x32;
+                                            throw new ModelingException(ercode, destinationContact.toString());
+                                        }
                                     }
                                 }
                             }
                         }
-                    } else if(sourceElement != null) {
-                        if(sourceContactNumber >= (sourceElement.icnt + sourceElement.ocnt)) {
-                            System.out.println("Internal state #" + (sourceContactNumber - sourceElement.icnt - sourceElement.ocnt) + " of element '" + sourceElementName + "' is changed to " + event.newstate);
-                        } else if(sourceContactNumber < sourceElement.icnt) {
-                            System.out.println("Input #" + (sourceContactNumber - sourceElement.icnt) + " of element '" + sourceElementName + "' is changed to " + event.newstate);
-                        }
-                        Signal sourceSignal = results.signals.get(sourceContact);
-                        if(sourceSignal != null) {
-                            sourceSignal.signal.put(timecnt, event.newstate);
-                        }
-                        if(active.containsKey(curtime)) {
-                            active.get(curtime).add(sourceElementName);
-                        } else {
-                            active.put(curtime, new TreeSet<String>());
-                            active.get(curtime).add(sourceElementName);
-                        }
-                    } else {
-                        System.out.println("Unknown exception while modeling caused by broken library or scheme file");
+                    } 
+                }
+            }
+            
+            // processing active elements at timecnt and creating new events
+            if (active.containsKey(timecnt)) {
+                for (String elementName : active.get(timecnt)) {
+                    // get the number of columns in a ToT for element
+                    Element element = library.library.get(scheme.elements.get(elementName));
+                    int[] array = new int[element.table[0].length];
+                    // forming inputs
+                    for (int n = 0; n < element.icnt; n++) {
+                        array[n] = results.signals.get(new Contact(elementName, n)).getState(timecnt);
+                    }
+                    for (int n = 0; n < element.ecnt; n++) {
+                        array[element.icnt + n] = results.signals.get(new Contact(elementName, element.icnt + element.ocnt + n)).getState(timecnt);
+                    }
+                    // calculating outputs and next state of internals
+                    element.process(array);
+                    // creating new events
+                    // if state of outputs isn't changed it still will be added as new event and hadnled at next routine
+                    long nexttime = timecnt + element.delay;
+                    if (!events.containsKey(nexttime)) {
+                        events.put(nexttime, new LinkedList<Event>());
+                    }
+                    for (int n = 0; n < element.ecnt; n++) {
+                        int state = array[element.icnt + element.ecnt + n];
+                        Contact contact = new Contact(elementName, element.icnt + element.ocnt + n);
+                        events.get(nexttime).add(new Event(contact, state, timecnt));
+                    }
+                    for (int n = 0; n < element.ocnt; n++) {
+                        int state = array[element.icnt + element.ecnt * 2 + n];
+                        Contact contact = new Contact(elementName, element.icnt + n);
+                        events.get(nexttime).add(new Event(contact, state, timecnt));
                     }
                 }
             }
-            /* обработка изменений */
-            if(active.containsKey(curtime)) {
-                for(String elementName : active.get(curtime)) {
-                    String elementType = scheme.getElements().get(elementName);
-                    Element element = elementType != null ? library.getLibrary().get(elementType) : null;
-                    if(element != null) {
-                        int[] array = new int[element.icnt + element.ecnt * 2 + element.ocnt];
-                        for(int n = 0; n < element.icnt; n++) {
-                            array[n] = results.signals.get(new Contact(elementName, n)).getState(curtime);
-                        }
-                        for(int n = 0; n < element.ecnt; n++) {
-                            array[element.icnt + n] = results.signals.get(new Contact(elementName, element.icnt + element.ocnt + n)).getState(curtime);
-                        }
-                        element.process(array);
-                        long nexttime = curtime + element.delay;
-                        if (!events.containsKey(nexttime)) {
-                            events.put(nexttime, new LinkedList<Event>());
-                        }
-                        for(int n = 0; n < element.ecnt; n++) {
-                            int state = array[element.icnt + element.ecnt + n];
-                            Contact contact = new Contact(elementName, element.icnt + element.ocnt + n);
-                            events.get(nexttime).add(new Event(contact, state));
-                        }
-                        for(int n = 0; n < element.ocnt; n++) {
-                            int state = array[element.icnt + element.ecnt * 2 + n];
-                            Contact contact = new Contact(elementName, element.icnt + n);
-                            events.get(nexttime).add(new Event(contact, state));
-                        }
-                    } else {
-                        System.out.println("No such element found");
-                    }
-                }
-            }
+            logwriter.write("Modeling at time " + timecnt + " is over\n\n");
+            /*Yaml yaml = new Yaml();
+            logwriter.write(yaml.dump(results) + "\n\n");*/
             timecnt += 1;
-            System.out.println(timecnt);
         }
+        
+        Long[] nodes = events.keySet().toArray(new Long[0]);
+        diawriter.write("TIME");
+        for(int n = 0; n < nodes.length; n++) {
+            diawriter.write("\t" + nodes[n]);
+        }
+        diawriter.write("\n");
+        
+        for(Contact contact : results.signals.keySet())
+        {
+            Signal signal = results.signals.get(contact);
+            diawriter.write(contact.toString() + "");
+            for(int n = 0; n < nodes.length; n++) {
+                diawriter.write("\t" + signal.getState(nodes[n]));
+            }
+            diawriter.write("\n");
+        }
+        
+        logwriter.close();
+        diawriter.close();
     }
 }

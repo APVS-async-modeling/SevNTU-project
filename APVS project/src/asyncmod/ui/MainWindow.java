@@ -38,8 +38,7 @@ import org.eclipse.swt.widgets.Text;
 import swing2swt.layout.BorderLayout;
 import asyncmod.about.AboutProgram;
 import asyncmod.about.AboutTeam;
-import asyncmod.du_model.DUModel;
-import asyncmod.du_model.DUModelController;
+import asyncmod.modeling.ModelingEngine;
 import asyncmod.ui.timediagrams.TimeDiagramsWindow;
 
 /**
@@ -49,7 +48,7 @@ public class MainWindow {
 
     // UI fields!
     //
-    
+
     protected Shell shell;    
     protected Display display;
     // sizes
@@ -71,12 +70,13 @@ public class MainWindow {
     private static Text errorsText;
     private static Text warningText;
     private static Text fullLogText;
+    private static Text modelingTimeText;
 
     //tables
     private static Table tableActiveElements;
     private static Table tableEvents;
     private static Table tableSignals;
-    
+
     // menu items
     private MenuItem resetMenuItem;
     private MenuItem runUntilMenuItem;
@@ -96,14 +96,11 @@ public class MainWindow {
     private static File libraryFile;
     private static File discreteModelFile;
     private static File signalsFile;
-    
+
     // etc
     private final static Calendar cal = Calendar.getInstance();
     static SimpleDateFormat dateFormatter = new SimpleDateFormat("HH:mm:ss '('yyyy.MM.dd')'");
-    
-    private Text modelingTimeText;
-    
-
+      
     
     /**
      * Launch the application.
@@ -227,13 +224,13 @@ public class MainWindow {
             public void widgetSelected(final SelectionEvent e) {
                 final String discreteModelFilePath = dlgDiscreteModel.open();
                 if (discreteModelFilePath != null) {
-                    libraryFile = new File(discreteModelFilePath);
-                    DUModelController controller = new DUModelController(discreteModelFilePath);
-                    try {
-                        DUModel model = controller.parseDUModelFromFile();
-                    } catch (IOException exc) {
-                        showMessage(exc.getMessage(), "Warning");
-                    }
+                    discreteModelFile = new File(discreteModelFilePath);
+//                    DUModelController controller = new DUModelController(discreteModelFilePath);
+//                    try {
+//                        DUModel model = controller.parseDUModelFromFile();
+//                    } catch (IOException exc) {
+//                        showMessage(exc.getMessage(), "Warning");
+//                    }
                     // TODO: show info about DU model in UI!
 
                     openSignalsFileMenuItem.setEnabled(true);
@@ -253,6 +250,14 @@ public class MainWindow {
                 if (signalsFilePath != null) {
                     signalsFile = new File(signalsFilePath);
                     setModelingButtonsAndMenuEnabled(true);
+                    
+                    // Creating the Modeling Core object:
+                    ModelingEngine engine = new ModelingEngine(libraryFile.getAbsolutePath(), discreteModelFile.getAbsolutePath(), signalsFile.getAbsolutePath());
+                    // run async modeling
+                    engine.run();
+
+                    modelingTimeText.setText("0");
+
                     String message = Messages.SIGNALS_FILE_SELECTED + signalsFilePath;
                     status(message);
                 } else {
@@ -272,7 +277,7 @@ public class MainWindow {
             @Override
             public void widgetSelected(SelectionEvent e) {
                 String fileToResultsSavingPath = dlgResultsSaving.open();
-                if(fileToResultsSavingPath != null){
+                if(fileToResultsSavingPath != null) {
                     status(Messages.RESULTS_SAVED);
                 } else {
                     status(Messages.RESULTS_NOT_SAVED);
@@ -361,6 +366,12 @@ public class MainWindow {
         initialStateBtn.setText("Initial State");
 
         stepBtn = new Button(ControlButtonsComposite, SWT.NONE);
+        stepBtn.addSelectionListener(new SelectionAdapter() {
+            @Override
+            public void widgetSelected(SelectionEvent e) {
+                //TODO: do this!
+            }
+        });
         stepBtn.setText("Step");
 
         fullRunBtn = new Button(ControlButtonsComposite, SWT.NONE);
@@ -379,6 +390,7 @@ public class MainWindow {
         
         modelingTimeText = new Text(ControlButtonsComposite, SWT.BORDER);
         modelingTimeText.setEditable(false);
+        modelingTimeText.setToolTipText(Messages.TOOLTIP_MODELING_TIME);
         timeDiagramsBtn.addSelectionListener(new SelectionAdapter() {
             @Override
             public void widgetSelected(SelectionEvent e) {
@@ -427,7 +439,7 @@ public class MainWindow {
         Group grpActiveElementsList = new Group(modelingStateComposite, SWT.NONE);
         grpActiveElementsList.setToolTipText(Messages.TOOLTIP_ACTIVE_ELEMENTS_TABLE);
         GridData gd_grpActiveElementsList = new GridData(SWT.FILL, SWT.FILL, true, true, 1, 1);
-        gd_grpActiveElementsList.widthHint = 179;
+        gd_grpActiveElementsList.widthHint = 134;
         gd_grpActiveElementsList.heightHint = 375;
         grpActiveElementsList.setLayoutData(gd_grpActiveElementsList);
         grpActiveElementsList.setText("Active elements");
@@ -440,11 +452,7 @@ public class MainWindow {
         
         TableColumn tblclmnNewColumn = new TableColumn(tableActiveElements, SWT.CENTER);
         tblclmnNewColumn.setWidth(76);
-        tblclmnNewColumn.setText("Element num");        
-        
-        TableColumn tblclmnNewColumn_1 = new TableColumn(tableActiveElements, SWT.CENTER);
-        tblclmnNewColumn_1.setWidth(55);
-        tblclmnNewColumn_1.setText("is Active");
+        tblclmnNewColumn.setText("Element num");
         
         Group grpActionsTable = new Group(modelingStateComposite, SWT.NONE);
         grpActionsTable.setText("Events");
@@ -565,7 +573,7 @@ public class MainWindow {
         stepBtn.setEnabled(state);
         fullRunBtn.setEnabled(state);
         runUntilBtn.setEnabled(state);
-        // TODO: block timeDiagramsBtn wuth another buttons when done
+        // TODO: block timeDiagramsBtn with another buttons when done
         timeDiagramsBtn.setEnabled(true);
         
         // menus:
@@ -658,6 +666,14 @@ public class MainWindow {
     }
     
     /**
+     * Sets the modeling time to the text field.
+     * @param modelingTime - new modeling time value.
+     */
+    public static void setModelingTime(long modelingTime) {
+        modelingTimeText.setText(modelingTime + "");
+    }
+    
+    /**
      * Sets the active elements table values.
      *
      * @param values the new active elements table values
@@ -700,7 +716,7 @@ public class MainWindow {
                 count++;
             }
         } catch (IndexOutOfBoundsException e) {
-            showMessage("������ ����������� ����� �������� ������ � �������: " + table.getToolTipText(), "Warning");
+            showMessage("Cannot set values to table: " + table.getToolTipText(), "Warning");
         }
     }
 

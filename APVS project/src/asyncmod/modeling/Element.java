@@ -18,7 +18,25 @@ public class Element {
     }
     
     public void process(int[] array) {
-        
+        for(Integer[] row : table) {
+            if(row.length != array.length) {
+                return;
+            }
+            else {
+                boolean equal = true;
+                for(int n = 0; n < icnt + ecnt; n++) {
+                    equal &= (row[n] == array[n]);
+                }
+                if(equal) {
+                    for(int n = ocnt + ecnt; n < array.length; n++) {
+                        array[n] = row[n];
+                    }
+                    return;
+                } else {
+                    continue;
+                }
+            }
+        }
     }
     
     public boolean checkIntegrity(String message) {
@@ -41,6 +59,16 @@ public class Element {
             if(row.length != columns) return false;
         }
         return true;
+    }
+    
+    public boolean isInput(int contact) {
+        return contact < icnt;
+    }
+    public boolean isOutput(int contact) {
+        return contact >= icnt && contact < ocnt;
+    }
+    public boolean isInternal(int contact) {
+        return contact >= icnt + ocnt && contact < icnt + ocnt + ecnt;
     }
     
     public String getName() {

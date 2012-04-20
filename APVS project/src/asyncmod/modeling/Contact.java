@@ -34,6 +34,9 @@ public class Contact implements Comparable<Contact> {
     public boolean equals(Contact other) {
         return this.element.equals(other.element) && this.contact.equals(other.contact);
     }
+    public boolean equals(Object other) {
+        return equals((Contact) other);
+    }
     public int compareTo(Contact other) {
         return this.element.equals(other.element) 
                 ? this.contact.compareTo(other.contact)

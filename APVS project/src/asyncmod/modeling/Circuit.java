@@ -1,5 +1,6 @@
 package asyncmod.modeling;
 
+import java.util.ArrayList;
 import java.util.LinkedList;
 import java.util.List;
 
@@ -7,7 +8,7 @@ public class Circuit {
     protected List<Contact> contacts;
     
     public Circuit() {
-        contacts = new LinkedList<Contact>();
+        contacts = new ArrayList<Contact>();
     }
     
     public List<Contact> getContacts() {

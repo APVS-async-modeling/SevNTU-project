@@ -54,13 +54,13 @@ circuits:
     - [4STU, 1]
     - [NQ_OUT, -1]
 elements:
-  1STU: 3_AND
-  1STL: 3_AND
-  2STU: 2_AND
-  2STL: 2_AND
-  3STU: 2_AND
-  3STL: 2_AND
-  4STU: 2_AND
-  4STL: 2_AND
+  1STU: 3_AND_OR
+  1STL: 3_AND_OR
+  2STU: 2_AND_OR
+  2STL: 2_AND_OR
+  3STU: 2_AND_OR
+  3STL: 2_AND_OR
+  4STU: 2_AND_OR
+  4STL: 2_AND_OR
 inputs: [J_IN, C_IN, K_IN]
 outputs: [Q_OUT, NQ_OUT]
