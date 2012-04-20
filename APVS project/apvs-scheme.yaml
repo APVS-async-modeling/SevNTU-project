@@ -2,65 +2,65 @@
 circuits:
   C_01:
     contacts:
-    - [J_IN, -1]
-    - [1STU, 1]
+    - [J, -1]
+    - [D1, 1]
   C_02:
     contacts:
-    - [C_IN, -1]
-    - [1STU, 2]
-    - [1STL, 0]
+    - [C, -1]
+    - [D1, 2]
+    - [D2, 0]
   C_03:
     contacts:
-    - [K_IN, -1]
-    - [1STL, 1]
+    - [K, -1]
+    - [D2, 1]
   C_04:
     contacts:
-    - [1STU, 3]
-    - [2STU, 0]
-    - [3STU, 0]
+    - [D1, 3]
+    - [D3, 0]
+    - [D5, 0]
   C_05:
     contacts: 
-    - [1STL, 3]
-    - [2STL, 1]
-    - [3STL, 1]
+    - [D2, 3]
+    - [D4, 1]
+    - [D6, 1]
   C_06:
     contacts:
-    - [2STU, 2]
-    - [3STU, 1]
-    - [2STL, 0]
+    - [D3, 2]
+    - [D5, 1]
+    - [D4, 0]
   C_07:
     contacts:
-    - [2STL, 2]
-    - [3STL, 0]
-    - [2STU, 1]
+    - [D4, 2]
+    - [D6, 0]
+    - [D3, 1]
   C_08:
     contacts:
-    - [3STU, 2]
-    - [4STU, 0]
+    - [D5, 2]
+    - [D7, 0]
   C_09:
     contacts:
-    - [3STL, 2]
-    - [4STL, 1]
+    - [D6, 2]
+    - [D8, 1]
   C_10:
     contacts:
-    - [4STU, 2]
-    - [1STL, 2]
-    - [4STL, 0]
-    - [Q_OUT, -1]
+    - [D7, 2]
+    - [D8, 0]
+    - [D2, 2]
+    - [Q, -1]
   C_11:
     contacts:
-    - [4STL, 2]
-    - [1STU, 0]
-    - [4STU, 1]
-    - [NQ_OUT, -1]
+    - [D8, 2]
+    - [D7, 1]
+    - [D1, 0]
+    - [NQ, -1]
 elements:
-  1STU: 3_AND_OR
-  1STL: 3_AND_OR
-  2STU: 2_AND_OR
-  2STL: 2_AND_OR
-  3STU: 2_AND_OR
-  3STL: 2_AND_OR
-  4STU: 2_AND_OR
-  4STL: 2_AND_OR
-inputs: [J_IN, C_IN, K_IN]
-outputs: [Q_OUT, NQ_OUT]
+  D1: 3_AND_OR
+  D2: 3_AND_OR
+  D3: 2_AND_OR
+  D4: 2_AND_OR
+  D5: 2_AND_OR
+  D6: 2_AND_OR
+  D7: 2_AND_OR
+  D8: 2_AND_OR
+inputs: [J, C, K]
+outputs: [Q, NQ]

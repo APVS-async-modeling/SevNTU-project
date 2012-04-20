@@ -134,7 +134,7 @@ public class ModelingEngine implements Runnable {
         }
         for (String inputName : scheme.getInputs()) {
             Signal signal = new Signal();
-            signal.signal.put(0L, 0x02);
+            signal.signal.put(0L, 0x002);
             results.signals.put(new Contact(inputName, -1), signal);
         }
         for (String outputName : scheme.getOutputs()) {
