@@ -13,7 +13,7 @@ import org.eclipse.swt.widgets.Shell;
 import org.eclipse.swt.widgets.Text;
 
 public class NumberInputDialog extends Dialog {
-  long value;
+  Long value;
 
   /**
    * @param parent
@@ -35,16 +35,16 @@ public class NumberInputDialog extends Dialog {
    * 
    * @return
    */
-  public long open() {
+  public Long open() {
     Shell parent = getParent();
     final Shell shell =
       new Shell(parent, SWT.TITLE | SWT.BORDER | SWT.APPLICATION_MODAL);
-    shell.setText("NumberInputDialog");
+    shell.setText("Modeling time input");
 
     shell.setLayout(new GridLayout(2, true));
 
     Label label = new Label(shell, SWT.NULL);
-    label.setText("Please enter a valid number:");
+    label.setText("Please enter new modeling time:");
 
     final Text text = new Text(shell, SWT.SINGLE | SWT.BORDER);
 
@@ -73,7 +73,7 @@ public class NumberInputDialog extends Dialog {
 
     buttonCancel.addListener(SWT.Selection, new Listener() {
       public void handleEvent(Event event) {
-        value = 0;
+        value = null;
         shell.dispose();
       }
     });

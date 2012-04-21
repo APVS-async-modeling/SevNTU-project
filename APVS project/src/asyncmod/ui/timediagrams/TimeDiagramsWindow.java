@@ -32,6 +32,8 @@ public class TimeDiagramsWindow extends Dialog {
     private static int HEIGHT = 500;
     private boolean isVisible = false;
 
+    private Tree tree;
+
     /**
      * Create the dialog.
      * 
@@ -120,30 +122,49 @@ public class TimeDiagramsWindow extends Dialog {
         scrolledComposite.setMinSize(label.computeSize(SWT.DEFAULT, SWT.DEFAULT));
                
         label.addPaintListener(new PaintListener() {
-            public void paintControl(PaintEvent event) {
-                
+            public void paintControl(PaintEvent event) {            
                 GC gc = event.gc;
                 gc.drawText("Time diagrams will be here =) Field size: "+ event.height + " x " +event.width, 50, 190);
                 gc.dispose();
             }
         });
-        
+
         timeDiagramsShell.addControlListener(new ControlListener() {
-            
+
             public void controlResized(ControlEvent arg0) {
-                 label.redraw();
+                label.redraw();
             }
-            
+
             public void controlMoved(ControlEvent arg0) {
-                label.redraw();             
+                label.redraw();
             }
         });
         
-        Tree tree = new Tree(sashForm, SWT.BORDER | SWT.CHECK | SWT.FULL_SELECTION);
+        tree = new Tree(sashForm, SWT.BORDER | SWT.CHECK | SWT.FULL_SELECTION);
         tree.setHeaderVisible(true);
         tree.setLinesVisible(true);
 
-        initializeTree(tree);
+        tree.addSelectionListener(new SelectionListener() {
+            private boolean isCurElementExpanded;
+
+            public void widgetDefaultSelected(SelectionEvent event) {
+                final TreeItem root = (TreeItem) event.item;
+                isCurElementExpanded = !isCurElementExpanded;
+                root.setExpanded(isCurElementExpanded);
+            }
+
+            public void widgetSelected(SelectionEvent event) {
+                if (event.detail == SWT.CHECK) {
+                    final TreeItem root = (TreeItem) event.item;
+                    final boolean isChecked = root.getChecked();
+                    for (TreeItem childItem : root.getItems()) {
+                        childItem.setChecked(isChecked);
+                    }
+                }
+            }
+        });
+
+        initializeTree();
         sashForm.setWeights(new int[] { 2, 1 });
 
     }
@@ -152,7 +173,7 @@ public class TimeDiagramsWindow extends Dialog {
         timeDiagramsShell.setBounds(coordX, coordY, WIDTH, HEIGHT);
     }
 
-    private void initializeTree(Tree tree) {
+    private void initializeTree() {
         for (int i = 0; i < 12; i++) {
             TreeItem item = new TreeItem(tree, SWT.NONE);
             item.setText("Element " + i);
@@ -160,26 +181,6 @@ public class TimeDiagramsWindow extends Dialog {
                 TreeItem litem = new TreeItem(item, SWT.NONE);
                 litem.setText("Contact " + i);
             }
-
-            tree.addSelectionListener(new SelectionListener() {
-                private boolean isCurElementExpanded;
-
-                public void widgetDefaultSelected(SelectionEvent event) {
-                    final TreeItem root = (TreeItem) event.item;
-                    isCurElementExpanded = !isCurElementExpanded;
-                    root.setExpanded(isCurElementExpanded);
-                }
-
-                public void widgetSelected(SelectionEvent event) {
-                    if (event.detail == SWT.CHECK) {
-                        final TreeItem root = (TreeItem) event.item;
-                        final boolean isChecked = root.getChecked();
-                        for (TreeItem childItem : root.getItems()) {
-                            childItem.setChecked(isChecked);
-                        }
-                    }
-                }
-            });
         }
     }
 }

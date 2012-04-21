@@ -16,6 +16,8 @@ public final class Messages {
     public static final String RESULTS_NOT_SAVED = "Results were not saved.";
     public static final String ERROR_WHILE_LAUNCHING_MODELING = "Error while launching modeling.";
     public static final String ERROR_WHILE_MODELING_SCHEME = "Error while modeling scheme.";
+    public static final String MODELING_TIME_DOESNT_CHANGED = "Modeling time doesn`t changed.";
+    public static final String MODELING_TIME_CHANGING = "Modeling time changing using goto dialog.";
     
     // additional
     public static final String LINE_DELIMITER_SYMBOL = "-";
@@ -33,6 +35,6 @@ public final class Messages {
     // messages
     public static final String TIME_DIAGRAMS_OPEN = "Time diagrams window was first opened.";
     public static final String TIME_DIAGRAMS_HIDE = "Time diagrams window was hidden.";
-    public static final String TIME_DIAGRAMS_SHOW = "Time diagrams window was opened.";
+    public static final String TIME_DIAGRAMS_SHOW = "Time diagrams window was opened.";   
     
 }

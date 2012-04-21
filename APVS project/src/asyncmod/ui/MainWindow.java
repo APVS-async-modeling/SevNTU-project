@@ -5,11 +5,6 @@ import java.text.SimpleDateFormat;
 import java.util.Arrays;
 import java.util.Calendar;
 import java.util.Collection;
-import java.util.LinkedList;
-import java.util.List;
-import java.util.Map;
-import java.util.NavigableMap;
-import java.util.Set;
 
 import org.eclipse.swt.SWT;
 import org.eclipse.swt.custom.SashForm;
@@ -17,6 +12,7 @@ import org.eclipse.swt.events.ControlEvent;
 import org.eclipse.swt.events.ControlListener;
 import org.eclipse.swt.events.SelectionAdapter;
 import org.eclipse.swt.events.SelectionEvent;
+import org.eclipse.swt.graphics.Color;
 import org.eclipse.swt.graphics.Point;
 import org.eclipse.swt.layout.FillLayout;
 import org.eclipse.swt.layout.GridData;
@@ -44,17 +40,12 @@ import org.eclipse.swt.widgets.Text;
 import swing2swt.layout.BorderLayout;
 import asyncmod.about.AboutProgram;
 import asyncmod.about.AboutTeam;
-import asyncmod.modeling.Contact;
 import asyncmod.modeling.Element;
-import asyncmod.modeling.Event;
 import asyncmod.modeling.ModelingEngine;
 import asyncmod.modeling.ModelingException;
-import asyncmod.modeling.Signal;
+import asyncmod.results_displaying.ModelingResultsDisplayer;
 import asyncmod.ui.timediagrams.TimeDiagramsWindow;
 
-/**
- * The Class MainWindow.
- */
 public class MainWindow {
 
     // UI fields!
@@ -63,7 +54,7 @@ public class MainWindow {
     protected Shell shell;    
     protected Display display;
     // sizes
-    private static final int WIDTH = 750;
+    private static final int WIDTH = 790;
     private static final int HEIGHT = 518;
 
     private TimeDiagramsWindow timeDiagramsWindow;
@@ -105,8 +96,11 @@ public class MainWindow {
     
     // modeling engine and index to browse thru results
     private ModelingEngine engine;
-    private int index;
-    private Long[] nodes;
+    private static int index;
+    private static Long[] nodes;
+    
+    // Module which will display the modeling results in UI
+    private ModelingResultsDisplayer displayer;
 
     //files
     private static File libraryFile;
@@ -116,7 +110,7 @@ public class MainWindow {
     // etc
     private final static Calendar cal = Calendar.getInstance();
     static SimpleDateFormat dateFormatter = new SimpleDateFormat("HH:mm:ss '('yyyy.MM.dd')'");
-    private static ExpandBar bar;
+    private static ExpandBar bar;    
       
     
     /**
@@ -311,9 +305,21 @@ public class MainWindow {
         menuItemModeling.setMenu(menu_3);
 
         initResetMenuItem = new MenuItem(menu_3, SWT.NONE);
+        initResetMenuItem.addSelectionListener(new SelectionAdapter() {
+            @Override
+            public void widgetSelected(SelectionEvent e) {
+                initReset();
+            }
+        });
         initResetMenuItem.setText("Init/Reset");
 
         gotoTimeMenuItem = new MenuItem(menu_3, SWT.NONE);
+        gotoTimeMenuItem.addSelectionListener(new SelectionAdapter() {
+            @Override
+            public void widgetSelected(SelectionEvent e) {
+                gotoTime();
+            }
+        });
         gotoTimeMenuItem.setText("Goto time...");
 
         stepFwdMenuItem = new MenuItem(menu_3, SWT.NONE);
@@ -401,9 +407,8 @@ public class MainWindow {
         gotoTimeBtn = new Button(ControlButtonsComposite, SWT.NONE);
         gotoTimeBtn.addSelectionListener(new SelectionAdapter() {
             @Override
-            public void widgetSelected(SelectionEvent e) {
-                NumberInputDialog dialog = new NumberInputDialog(shell);
-                gotoTime(dialog.open());
+            public void widgetSelected(SelectionEvent e) {                
+                gotoTime();
             }
         });
         gotoTimeBtn.setText("Goto time");
@@ -527,8 +532,7 @@ public class MainWindow {
         
         TableColumn tblclmnSignal = new TableColumn(tableSignals, SWT.CENTER);
         tblclmnSignal.setWidth(57);
-        tblclmnSignal.setText("Signal");
-        
+        tblclmnSignal.setText("Signal");        
         
         sashForm.setWeights(new int[] { 1, 4 });
         
@@ -581,9 +585,8 @@ public class MainWindow {
         
         fullLogText = new Text(fullLogComposite, SWT.BORDER | SWT.READ_ONLY | SWT.WRAP | SWT.V_SCROLL | SWT.MULTI);
         fullLogText.setEditable(false);
-        
-        setModelingButtonsAndMenuEnabled(false);     
-        
+              
+        setModelingButtonsAndMenuEnabled(false);        
     }
 
     private final Point getRightUpperCornerPosition() {
@@ -755,12 +758,15 @@ public class MainWindow {
         }
     }
     
-    private void initReset() {
+    private void initReset() {        
         // Creating the Modeling Core object and launching it
         // TODO Allow to check log and diagram files
         try {
             engine = new ModelingEngine(libraryFile.getAbsolutePath(), discreteModelFile.getAbsolutePath(), 
                     signalsFile.getAbsolutePath(), "test-diagrams.log", "test-logs.log");
+            
+            displayer = new ModelingResultsDisplayer(engine);
+            
         } catch (ModelingException e) {
             status(Messages.ERROR_WHILE_LAUNCHING_MODELING);
             e.printStackTrace();
@@ -773,7 +779,7 @@ public class MainWindow {
                 nodes = engine.getEvents().keySet().toArray(new Long[0]);
                 modelingTimeText.setText(nodes[0] + "ns");
                 status("Modeling was succesful, timerange is " + nodes[0] + "..." + nodes[nodes.length - 1]);
-                updateTables();
+                displayer.updateUITables();
             } else {
                 status(Messages.ERROR_WHILE_MODELING_SCHEME);
             }
@@ -786,71 +792,33 @@ public class MainWindow {
         index = Math.min(index + 1, nodes.length - 1);
         modelingTimeText.setText(nodes[index] + "ns");
         status("Step forward to node #" + index + " at " + nodes[index] + "ns");
-        updateTables();
+        displayer.updateUITables();
     }
-    
+
     private void stepBackward() {
         index = Math.max(index - 1, 0);
         modelingTimeText.setText(nodes[index] + "ns");
         status("Step backward to node #" + index + " at " + nodes[index] + "ns");
-        updateTables();
+        displayer.updateUITables();
     }
     
-    private void gotoTime(long time) {
-        Long nearest = engine.getEvents().floorKey(time);
-        if(nearest == null) nearest = nodes[0];
-        index = Arrays.binarySearch(nodes, nearest);
-        modelingTimeText.setText(nearest + "ns");
-        status("Goto node #" + index + " at " + nodes[index] + "ns");
-        updateTables();
-    }
-    
-    private void updateTables() {
-        String[][] table;
-        long time = nodes[index];
-        int n;
-        
-        // signals
-        Map<Contact, Signal> signals = engine.getResults().getSignals();
-        table = new String[signals.size()][2];
-        n = 0;
-        for(Contact contact : signals.keySet()) {
-            table[n][0] = contact.toString();
-            table[n][1] = signals.get(contact).getState(time).toString();
-            n++;   
-        }
-        setSignalsTableValues(table);
-        
-        // active
-        Set<String> active = engine.getActive().get(time);
-        if(active != null) {
-            table = new String[active.size()][1];
-            n = 0;
-            for(String elementName : active) {
-                table[n][0] = elementName;
-                n++;   
-            }
-            
+    private void gotoTime() {
+        status(Messages.MODELING_TIME_CHANGING);
+        NumberInputDialog dialog = new NumberInputDialog(shell);
+        Long time = dialog.open();
+        if (time != null) {
+            Long nearest = engine.getEvents().floorKey(time);
+            if (nearest == null)
+                nearest = nodes[0];
+            index = Arrays.binarySearch(nodes, nearest);
+            modelingTimeText.setText(nearest + "ns");
+            status("Goto node #" + index + " at " + nodes[index] + "ns");
+            displayer.updateUITables();
         } else {
-            table = new String[][]{{"<none>"}};
+            status(Messages.MODELING_TIME_DOESNT_CHANGED);
         }
-        setActiveElementsTableValues(table);
-        
-        // events
-        NavigableMap<Long, List<Event>> events = engine.getEvents().tailMap(time, false);
-        List<String[]> temp = new LinkedList<String[]>();
-        for(Long evttime : events.keySet()) {
-            for(Event event : events.get(evttime)) {
-                if(event.getFrom() <= time) {
-                    temp.add(new String[] {evttime.toString(), event.getContact().getElement(), 
-                            event.getContact().getCnumber().toString(), event.getNewstate() + "", event.getFrom() + ""});
-                }
-            }
-        }
-        table = temp.toArray(new String[0][0]);
-        setEventsTableValues(table);
     }
-    
+        
     public static void updateExpandBarElements(Collection <Element> libraryElements) {
         for (ExpandItem item : bar.getItems()) {
             item.dispose();
@@ -875,5 +843,9 @@ public class MainWindow {
         item.setHeight(composite.computeSize(SWT.DEFAULT, SWT.DEFAULT).y);
         item.setControl(composite);
     }
-    
+
+    public static Long getCurrentNode() {
+        return nodes[index];
+    }
+
 }
