@@ -3,10 +3,12 @@ package asyncmod.modeling;
 import java.util.HashMap;
 import java.util.Map;
 
+import asyncmod.ui.MainWindow;
+
 public class ModelingException extends Exception {
 
     private static final long serialVersionUID = -243739276529322262L;
-    public static final Map<Integer, String> messages;
+    private static final Map<Integer, String> messages;
     
     static {
         messages = new HashMap<Integer, String>();
@@ -23,12 +25,12 @@ public class ModelingException extends Exception {
         messages.put(0x41, "Ошибка в сигналах, такого контакта не существует.");
         messages.put(0x50, "Ошибка в библиотечном определении элемента.");
     }
-    
-    
+
     public ModelingException(int ID, String text) {
         super(messages.get(ID) + " :: " + text);
+        MainWindow.showMessage(messages.get(ID), "Warning");
     }
-    
+
     public ModelingException(int ID) {
         super(messages.get(ID));
     }
