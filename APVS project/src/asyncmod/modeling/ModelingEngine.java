@@ -15,8 +15,8 @@ import java.util.TreeSet;
 
 import org.yaml.snakeyaml.Yaml;
 
+import asyncmod.ui.LogWriter;
 import asyncmod.ui.MainWindow;
-
 
 public class ModelingEngine implements Runnable {
     private Scheme scheme;
@@ -46,7 +46,7 @@ public class ModelingEngine implements Runnable {
         }
         try {
             this.library = (Library) yaml.load(stream);
-            MainWindow.updateExpandBarElements(this.library);
+            MainWindow.updateExpandBarElements(this.library.getLibrary().values());
         } catch(Exception e) {
             throw new ModelingException(0x10);
         }
@@ -78,14 +78,12 @@ public class ModelingEngine implements Runnable {
         try {
             correct = check();
         } catch (ModelingException e) {
-            // TODO Auto-generated catch block
             e.printStackTrace();
         }
         if(correct) {
             try {
                 simulate();
             } catch (IOException e) {
-                // TODO Auto-generated catch block
                 e.printStackTrace();
             }
         }
@@ -181,7 +179,7 @@ public class ModelingEngine implements Runnable {
             latency += element.delay;
         }
         endtime = events.lastKey() + latency * 2;
-        
+
         // creating dummy signals for each input/output/internal contact of elements in scheme 
         for (String elementName : scheme.getElements().keySet()) {
             Element element = library.library.get(scheme.elements.get(elementName));
@@ -203,7 +201,7 @@ public class ModelingEngine implements Runnable {
         }
         
         // buffered output streams for logging and result saving
-        BufferedWriter logwriter = new BufferedWriter(new FileWriter(logs, false));
+        BufferedWriter logwriter = new LogWriter(new FileWriter(logs, false));
         BufferedWriter diawriter = new BufferedWriter(new FileWriter(diagrams, false));
         
         while(timecnt < endtime) {

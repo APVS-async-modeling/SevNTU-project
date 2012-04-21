@@ -4,6 +4,7 @@ import java.io.File;
 import java.text.SimpleDateFormat;
 import java.util.Arrays;
 import java.util.Calendar;
+import java.util.Collection;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
@@ -46,7 +47,6 @@ import asyncmod.about.AboutTeam;
 import asyncmod.modeling.Contact;
 import asyncmod.modeling.Element;
 import asyncmod.modeling.Event;
-import asyncmod.modeling.Library;
 import asyncmod.modeling.ModelingEngine;
 import asyncmod.modeling.ModelingException;
 import asyncmod.modeling.Signal;
@@ -402,8 +402,8 @@ public class MainWindow {
         gotoTimeBtn.addSelectionListener(new SelectionAdapter() {
             @Override
             public void widgetSelected(SelectionEvent e) {
-                //TODO: Create new dialog window, where ask about necessary time
-                gotoTime(0);
+                NumberInputDialog dialog = new NumberInputDialog(shell);
+                gotoTime(dialog.open());
             }
         });
         gotoTimeBtn.setText("Goto time");
@@ -545,23 +545,12 @@ public class MainWindow {
         TabItem modelingResultsTab = new TabItem(logTabFolder, SWT.NONE);
         modelingResultsTab.setText("Modeling results");
 
-        Composite modelingResultsComposite = new Composite(logTabFolder,
-                SWT.NONE);
+        Composite modelingResultsComposite = new Composite(logTabFolder, SWT.NONE);
         modelingResultsTab.setControl(modelingResultsComposite);
         modelingResultsComposite.setLayout(new FillLayout(SWT.HORIZONTAL));
 
-        modelingResultsText = new Text(modelingResultsComposite, SWT.BORDER | SWT.READ_ONLY | SWT.WRAP | SWT.MULTI);
+        modelingResultsText = new Text(modelingResultsComposite, SWT.BORDER | SWT.READ_ONLY | SWT.WRAP | SWT.V_SCROLL | SWT.MULTI);
         modelingResultsText.setEditable(false);
-
-        TabItem errorsTab = new TabItem(logTabFolder, SWT.NONE);
-        errorsTab.setText("Errors");
-
-        Composite errorsComposite = new Composite(logTabFolder, SWT.NONE);
-        errorsTab.setControl(errorsComposite);
-        errorsComposite.setLayout(new FillLayout(SWT.HORIZONTAL));
-
-        errorsText = new Text(errorsComposite, SWT.BORDER | SWT.READ_ONLY | SWT.WRAP | SWT.MULTI);
-        errorsText.setEditable(false);
 
         TabItem warningsTab = new TabItem(logTabFolder, SWT.NONE);
         warningsTab.setText("Warnings");
@@ -570,8 +559,18 @@ public class MainWindow {
         warningsTab.setControl(warningsComposite);
         warningsComposite.setLayout(new FillLayout(SWT.HORIZONTAL));
 
-        warningText = new Text(warningsComposite, SWT.BORDER | SWT.READ_ONLY | SWT.WRAP | SWT.MULTI);
+        warningText = new Text(warningsComposite, SWT.BORDER | SWT.READ_ONLY | SWT.WRAP | SWT.V_SCROLL | SWT.MULTI);
         warningText.setEditable(false);
+
+        TabItem errorsTab = new TabItem(logTabFolder, SWT.NONE);
+        errorsTab.setText("Errors");
+
+        Composite errorsComposite = new Composite(logTabFolder, SWT.NONE);
+        errorsTab.setControl(errorsComposite);
+        errorsComposite.setLayout(new FillLayout(SWT.HORIZONTAL));
+
+        errorsText = new Text(errorsComposite, SWT.BORDER | SWT.READ_ONLY | SWT.WRAP | SWT.V_SCROLL | SWT.MULTI);
+        errorsText.setEditable(false);
         
         TabItem logsTab = new TabItem(logTabFolder, SWT.NONE);
         logsTab.setText("Logs");
@@ -580,7 +579,7 @@ public class MainWindow {
         logsTab.setControl(fullLogComposite);
         fullLogComposite.setLayout(new FillLayout(SWT.HORIZONTAL));
         
-        fullLogText = new Text(fullLogComposite, SWT.BORDER | SWT.READ_ONLY | SWT.WRAP | SWT.MULTI);
+        fullLogText = new Text(fullLogComposite, SWT.BORDER | SWT.READ_ONLY | SWT.WRAP | SWT.V_SCROLL | SWT.MULTI);
         fullLogText.setEditable(false);
         
         setModelingButtonsAndMenuEnabled(false);     
@@ -646,8 +645,8 @@ public class MainWindow {
      *
      * @param str the input string.
      */
-    public static void addWarning(String str) {           
-        warningText.append(dateFormatter.format(cal.getTime())+ ": "+str + "\n");
+    public static void addWarning(String str) {
+        warningText.append(dateFormatter.format(cal.getTime()) + ": " + str + "\n");
         appendLineDelimiter(warningText);
         addToLog("[Warning] " + str);
     }
@@ -657,8 +656,8 @@ public class MainWindow {
      *
      * @param str the input string.
      */
-    public static void addError(String str) {           
-        errorsText.append(dateFormatter.format(cal.getTime())+ ": "+str + "\n");
+    public static void addError(String str) {
+        errorsText.append(dateFormatter.format(cal.getTime()) + ": " + str + "\n");
         appendLineDelimiter(errorsText);
         addToLog("[Error] " + str);
     }
@@ -668,12 +667,22 @@ public class MainWindow {
      *
      * @param str the input string.
      */
-    public static void addToLog(String str) {     
-        fullLogText.append(dateFormatter.format(cal.getTime())+ ": "+str + "\n");
-        appendLineDelimiter(fullLogText);        
+    public static void addToLog(String str) {
+        fullLogText.append(dateFormatter.format(cal.getTime()) + ": " + str + "\n");
+        appendLineDelimiter(fullLogText);
     }
 
-    private static void appendLineDelimiter(Text textField){
+    /**
+     * Adds the input string to the "Logs" textField.
+     *
+     * @param str the input string.
+     */
+    public static void addToModelingResults(String str) {
+        modelingResultsText.append(dateFormatter.format(cal.getTime()) + ": " + str);
+        appendLineDelimiter(modelingResultsText);
+    }
+    
+    private static void appendLineDelimiter(Text textField) {
 //        for(int i=0; i<150; i++) {
 //            textField.append(UI.LINE_DELIMITER_SYMBOL);
 //        }
@@ -791,6 +800,7 @@ public class MainWindow {
         Long nearest = engine.getEvents().floorKey(time);
         if(nearest == null) nearest = nodes[0];
         index = Arrays.binarySearch(nodes, nearest);
+        modelingTimeText.setText(nearest + "ns");
         status("Goto node #" + index + " at " + nodes[index] + "ns");
         updateTables();
     }
@@ -841,11 +851,11 @@ public class MainWindow {
         setEventsTableValues(table);
     }
     
-    public static void updateExpandBarElements(Library library) {
+    public static void updateExpandBarElements(Collection <Element> libraryElements) {
         for (ExpandItem item : bar.getItems()) {
             item.dispose();
-        }        
-        for (Element element : library.getLibrary().values()) {
+        }
+        for (Element element : libraryElements) {
             String elementName = element.getName();
             String elementDescription = element.getDescr();
             addElementToExpandBar(elementName, elementDescription);
