@@ -1,5 +1,13 @@
 package asyncmod.ui.timediagrams;
 
+import java.io.BufferedReader;
+import java.io.File;
+import java.io.FileNotFoundException;
+import java.io.FileReader;
+import java.io.IOException;
+import java.util.ArrayList;
+import java.util.List;
+
 import org.eclipse.swt.SWT;
 import org.eclipse.swt.custom.SashForm;
 import org.eclipse.swt.custom.ScrolledComposite;
@@ -10,9 +18,11 @@ import org.eclipse.swt.events.PaintListener;
 import org.eclipse.swt.events.SelectionEvent;
 import org.eclipse.swt.events.SelectionListener;
 import org.eclipse.swt.graphics.GC;
+import org.eclipse.swt.graphics.Image;
 import org.eclipse.swt.widgets.Dialog;
 import org.eclipse.swt.widgets.Display;
 import org.eclipse.swt.widgets.Event;
+import org.eclipse.swt.widgets.Item;
 import org.eclipse.swt.widgets.Label;
 import org.eclipse.swt.widgets.Listener;
 import org.eclipse.swt.widgets.Shell;
@@ -31,8 +41,13 @@ public class TimeDiagramsWindow extends Dialog {
     private static int WIDTH = 500;
     private static int HEIGHT = 500;
     private boolean isVisible = false;
+    private BufferedReader fr = null;
 
     private Tree tree;
+
+    private List<String> lines;
+
+    private Label label;
 
     /**
      * Create the dialog.
@@ -44,10 +59,29 @@ public class TimeDiagramsWindow extends Dialog {
         super(parent, style);
     }
 
-    /** * Open the dialog.
+    /**
+     * * Open the dialog.
+     * 
      * @return the result
      */
     public Object open(final int coordX, final int coordY) {
+
+        try {
+            fr = new BufferedReader(new FileReader(new File("test-diagrams.log")));
+            lines = new ArrayList<String>();
+            String line;
+
+            while ((line = fr.readLine()) != null) {
+                lines.add(line);
+            }
+        } catch (FileNotFoundException e) {
+            // TODO Auto-generated catch block
+            e.printStackTrace();
+        } catch (IOException e1) {
+            // TODO Auto-generated catch block
+            e1.printStackTrace();
+        }
+        
         createContents(coordX, coordY);
         timeDiagramsShell.addListener(SWT.Traverse, new Listener() {
             public void handleEvent(final Event event) {
@@ -117,7 +151,7 @@ public class TimeDiagramsWindow extends Dialog {
         scrolledComposite.setExpandHorizontal(true);
         scrolledComposite.setExpandVertical(true);
         
-        final Label label = new Label(scrolledComposite, SWT.NONE);
+        label = new Label(scrolledComposite, SWT.NONE);
         scrolledComposite.setContent(label);
         scrolledComposite.setMinSize(label.computeSize(SWT.DEFAULT, SWT.DEFAULT));
                
@@ -160,6 +194,7 @@ public class TimeDiagramsWindow extends Dialog {
                     for (TreeItem childItem : root.getItems()) {
                         childItem.setChecked(isChecked);
                     }
+                    repaintTimeDiagrams();
                 }
             }
         });
@@ -174,13 +209,50 @@ public class TimeDiagramsWindow extends Dialog {
     }
 
     private void initializeTree() {
-        for (int i = 0; i < 12; i++) {
-            TreeItem item = new TreeItem(tree, SWT.NONE);
-            item.setText("Element " + i);
-            for (int l = 0; l < 5; l++) {
-                TreeItem litem = new TreeItem(item, SWT.NONE);
-                litem.setText("Contact " + i);
+        for (String line : lines) {
+            if (line != null) {
+                String[] words = line.split("\\s+");
+                if (words.length > 0) {
+                    String[] elementAndContact = words[0].split("=");
+                    if (elementAndContact.length == 2)
+                    {
+                        String element = elementAndContact[0];
+                        String contact = elementAndContact[1];
+                        addElement(element, contact);
+                    }
+                }
             }
         }
     }
+    
+    private void addElement(String element, String contact) {
+        int indexOfItem = getItemIndexByElementName(element);
+        if(indexOfItem == -1) { // add a new element
+            TreeItem item = new TreeItem(tree, SWT.NONE);
+            item.setText(element);
+        } else { // add a contact to existing element
+            TreeItem litem = new TreeItem(tree.getItem(indexOfItem), SWT.NONE);
+            litem.setText(contact);
+        }
+    }
+
+    private int getItemIndexByElementName(String elementName) {        
+        int result = -1;
+        Item [] items = tree.getItems();  
+        for(int i=0; i< items.length; i++) {
+            if(items[i].getText().equals(elementName)) {
+                return i;
+            }
+        }        
+        return result;
+    }
+    
+    private void repaintTimeDiagrams() {
+        Image image = new Image(Display.getDefault(), timeDiagramsShell.getBounds().width, timeDiagramsShell.getBounds().height);
+        GC gc = new GC(image);
+        gc.drawLine(0, 0, 150, 150);
+        
+        label.setImage(image);
+    }
+    
 }
