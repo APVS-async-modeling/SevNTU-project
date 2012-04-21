@@ -769,7 +769,7 @@ public class MainWindow {
             status("Error while launching modeling");
             e.printStackTrace();
         }
-        if(engine != null) {
+        if(engine != null && engine.correct) {
             engine.run();
             index = 0;
             setModelingButtonsAndMenuEnabled(true);
@@ -798,6 +798,7 @@ public class MainWindow {
     
     private void gotoTime(long time) {
         Long nearest = engine.getEvents().floorKey(time);
+        if(nearest == null) nearest = nodes[0];
         index = Arrays.binarySearch(nodes, nearest);
         status("Goto node #" + index + " at " + nodes[index] + "ns");
         updateTables();

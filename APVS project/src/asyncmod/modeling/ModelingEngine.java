@@ -27,6 +27,7 @@ public class ModelingEngine implements Runnable {
     private NavigableMap<Long, List<Event>> events;
     private NavigableMap<Long, Set<String>> active;
     
+    public boolean correct = false;
     
     String diagrams, logs;
     
@@ -72,19 +73,21 @@ public class ModelingEngine implements Runnable {
     
     public void run() {
         try {
-            check();
+            correct = check();
         } catch (ModelingException e) {
             // TODO Auto-generated catch block
             e.printStackTrace();
         }
-        try {
-            simulate();
-        } catch (IOException e) {
-            // TODO Auto-generated catch block
-            e.printStackTrace();
+        if(correct) {
+            try {
+                simulate();
+            } catch (IOException e) {
+                // TODO Auto-generated catch block
+                e.printStackTrace();
+            }
         }
     }
-    private void check() throws ModelingException {
+    private boolean check() throws ModelingException {
         // checking elements
         for(String elementName : scheme.elements.keySet()) {
             String elementType = scheme.elements.get(elementName);
@@ -143,6 +146,8 @@ public class ModelingEngine implements Runnable {
                 throw new ModelingException(0x50, elementName);
             }
         }
+        
+        return true;
     }
 
     public void simulate() throws IOException {
