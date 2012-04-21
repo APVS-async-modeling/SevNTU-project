@@ -336,7 +336,9 @@ public class ModelingEngine implements Runnable {
         }
         diawriter.write("\n");
         
-        for(Contact contact : results.signals.keySet())
+        Contact[] contacts = results.signals.keySet().toArray(new Contact[0]);
+        Arrays.sort(contacts);
+        for(Contact contact : contacts)
         {
             Signal signal = results.signals.get(contact);
             diawriter.write(contact.toString() + "");
