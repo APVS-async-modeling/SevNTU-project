@@ -769,14 +769,18 @@ public class MainWindow {
             status("Error while launching modeling");
             e.printStackTrace();
         }
-        if(engine != null && engine.correct) {
+        if(engine != null) {
             engine.run();
-            index = 0;
-            setModelingButtonsAndMenuEnabled(true);
-            nodes = engine.getEvents().keySet().toArray(new Long[0]);
-            modelingTimeText.setText(nodes[0] + "ns");
-            status("Modeling was succesful, timerange is " + nodes[0] + "..." + nodes[nodes.length - 1]);
-            updateTables();
+            if(engine.correct) {
+                index = 0;
+                setModelingButtonsAndMenuEnabled(true);
+                nodes = engine.getEvents().keySet().toArray(new Long[0]);
+                modelingTimeText.setText(nodes[0] + "ns");
+                status("Modeling was succesful, timerange is " + nodes[0] + "..." + nodes[nodes.length - 1]);
+                updateTables();
+            } else {
+                status("Error while modeling scheme");
+            }
         } else {
             status("Error while launching modeling");
         }
