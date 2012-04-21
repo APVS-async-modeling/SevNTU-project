@@ -19,7 +19,7 @@ public class Scheme {
         outputs = new LinkedList<String>();
         
     }
-    
+
     public Map<String, String> getElements() {
         return elements;
     }

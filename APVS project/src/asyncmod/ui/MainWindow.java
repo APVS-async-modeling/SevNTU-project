@@ -44,7 +44,9 @@ import swing2swt.layout.BorderLayout;
 import asyncmod.about.AboutProgram;
 import asyncmod.about.AboutTeam;
 import asyncmod.modeling.Contact;
+import asyncmod.modeling.Element;
 import asyncmod.modeling.Event;
+import asyncmod.modeling.Library;
 import asyncmod.modeling.ModelingEngine;
 import asyncmod.modeling.ModelingException;
 import asyncmod.modeling.Signal;
@@ -114,6 +116,7 @@ public class MainWindow {
     // etc
     private final static Calendar cal = Calendar.getInstance();
     static SimpleDateFormat dateFormatter = new SimpleDateFormat("HH:mm:ss '('yyyy.MM.dd')'");
+    private static ExpandBar bar;
       
     
     /**
@@ -206,7 +209,7 @@ public class MainWindow {
 
         Menu menu_4 = new Menu(mntmOpen_1);
         mntmOpen_1.setMenu(menu_4);
-
+       
         MenuItem openLibraryFileMenuItem = new MenuItem(menu_4, SWT.NONE);
         openLibraryFileMenuItem.setText("Open Library file...");
 
@@ -245,7 +248,6 @@ public class MainWindow {
 //                    } catch (IOException exc) {
 //                        showMessage(exc.getMessage(), "Error");
 //                    }
-                    // TODO: show info about DU model in UI!
 
                     openSignalsFileMenuItem.setEnabled(true);
 
@@ -373,7 +375,6 @@ public class MainWindow {
         initResetBtn.addSelectionListener(new SelectionAdapter() {
             @Override
             public void widgetSelected(SelectionEvent e) {
-                //TODO: do this!
                 initReset();
             }
         });
@@ -383,8 +384,7 @@ public class MainWindow {
         stepFwdBtn.addSelectionListener(new SelectionAdapter() {
             @Override
             public void widgetSelected(SelectionEvent e) {
-                //TODO: do this!
-                stepFwd();
+                stepForward();
             }
         });
         stepFwdBtn.setText("Step Forward");
@@ -393,8 +393,7 @@ public class MainWindow {
         stepBwdBtn.addSelectionListener(new SelectionAdapter() {
             @Override
             public void widgetSelected(SelectionEvent e) {
-                //TODO: do this!
-                stepBwd();
+                stepBackward();
             }
         });
         stepBwdBtn.setText("Step Backward");
@@ -443,25 +442,16 @@ public class MainWindow {
         sashForm.setLayoutData(BorderLayout.CENTER);
 
         Composite elementsComposite = new Composite(sashForm, SWT.BORDER);
-        elementsComposite.setLayout(new FillLayout(SWT.HORIZONTAL));
-
-        ExpandBar bar = new ExpandBar(elementsComposite, SWT.BORDER | SWT.V_SCROLL);
-
-        // ExpandBar customization
-        Composite composite = new Composite(bar, SWT.NONE);
-        composite.setLayout(new GridLayout(1, false));
-        Text textField = new Text(composite, SWT.WRAP | SWT.CENTER | SWT.MULTI);
-        textField.setEditable(false);
-        textField.setLayoutData(new GridData(SWT.FILL, SWT.FILL, true, true, 1, 1));
-        textField.setText("Element 1 description");
-        ExpandItem item1 = new ExpandItem(bar, SWT.NONE, 0);
-        item1.setExpanded(true);
-        item1.setText("Element 1");
-        item1.setHeight(composite.computeSize(SWT.DEFAULT, SWT.DEFAULT).y);
-        item1.setControl(composite);
-
+        elementsComposite.setLayout(new BorderLayout(0, 0));
+        
+        Group grpElementTypes = new Group(elementsComposite, SWT.NONE);
+        grpElementTypes.setText("Element types:");
+        grpElementTypes.setLayoutData(BorderLayout.CENTER);
+        grpElementTypes.setLayout(new FillLayout(SWT.HORIZONTAL));
+        
+        bar = new ExpandBar(grpElementTypes, SWT.BORDER | SWT.V_SCROLL);                
         bar.setSpacing(5);
-
+        
         Composite modelingStateComposite = new Composite(sashForm, SWT.BORDER);
         modelingStateComposite.setLayout(new GridLayout(3, false));
         
@@ -593,7 +583,7 @@ public class MainWindow {
         fullLogText = new Text(fullLogComposite, SWT.BORDER | SWT.READ_ONLY | SWT.WRAP | SWT.MULTI);
         fullLogText.setEditable(false);
         
-        setModelingButtonsAndMenuEnabled(false);       
+        setModelingButtonsAndMenuEnabled(false);     
         
     }
 
@@ -763,8 +753,7 @@ public class MainWindow {
             engine = new ModelingEngine(libraryFile.getAbsolutePath(), discreteModelFile.getAbsolutePath(), 
                     signalsFile.getAbsolutePath(), "test-diagrams.log", "test-logs.log");
         } catch (ModelingException e) {
-            // TODO Auto-generated catch block
-            status("Error while launching modeling");
+            status(Messages.ERROR_WHILE_LAUNCHING_MODELING);
             e.printStackTrace();
         }
         if(engine != null) {
@@ -777,21 +766,21 @@ public class MainWindow {
                 status("Modeling was succesful, timerange is " + nodes[0] + "..." + nodes[nodes.length - 1]);
                 updateTables();
             } else {
-                status("Error while modeling scheme");
+                status(Messages.ERROR_WHILE_MODELING_SCHEME);
             }
         } else {
-            status("Error while launching modeling");
+            status(Messages.ERROR_WHILE_LAUNCHING_MODELING);
         }
     }
     
-    private void stepFwd() {
+    private void stepForward() {
         index = Math.min(index + 1, nodes.length - 1);
         modelingTimeText.setText(nodes[index] + "ns");
         status("Step forward to node #" + index + " at " + nodes[index] + "ns");
         updateTables();
     }
     
-    private void stepBwd() {
+    private void stepBackward() {
         index = Math.max(index - 1, 0);
         modelingTimeText.setText(nodes[index] + "ns");
         status("Step backward to node #" + index + " at " + nodes[index] + "ns");
@@ -851,4 +840,30 @@ public class MainWindow {
         table = temp.toArray(new String[0][0]);
         setEventsTableValues(table);
     }
+    
+    public static void updateExpandBarElements(Library library) {
+        for (ExpandItem item : bar.getItems()) {
+            item.dispose();
+        }        
+        for (Element element : library.getLibrary().values()) {
+            String elementName = element.getName();
+            String elementDescription = element.getDescr();
+            addElementToExpandBar(elementName, elementDescription);
+        }
+    }
+    
+    public static void addElementToExpandBar(String elementName, String elementDescription) {
+        Composite composite = new Composite(bar, SWT.NONE);
+        composite.setLayout(new GridLayout(1, false));
+        Text textField = new Text(composite, SWT.WRAP | SWT.CENTER | SWT.MULTI);
+        textField.setEditable(false);
+        textField.setLayoutData(new GridData(SWT.FILL, SWT.FILL, true, true, 1, 1));
+        textField.setText(elementDescription);
+        ExpandItem item = new ExpandItem(bar, SWT.NONE, 0);
+        item.setExpanded(true);
+        item.setText(elementName);
+        item.setHeight(composite.computeSize(SWT.DEFAULT, SWT.DEFAULT).y);
+        item.setControl(composite);
+    }
+    
 }

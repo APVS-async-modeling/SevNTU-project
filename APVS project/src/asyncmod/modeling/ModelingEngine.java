@@ -15,6 +15,8 @@ import java.util.TreeSet;
 
 import org.yaml.snakeyaml.Yaml;
 
+import asyncmod.ui.MainWindow;
+
 
 public class ModelingEngine implements Runnable {
     private Scheme scheme;
@@ -44,6 +46,7 @@ public class ModelingEngine implements Runnable {
         }
         try {
             this.library = (Library) yaml.load(stream);
+            MainWindow.updateExpandBarElements(this.library);
         } catch(Exception e) {
             throw new ModelingException(0x10);
         }
@@ -54,7 +57,7 @@ public class ModelingEngine implements Runnable {
             throw new ModelingException(0x01, scheme);
         }
         try {
-            this.scheme = (Scheme) yaml.load(stream);
+            this.scheme = (Scheme) yaml.load(stream);            
         } catch(Exception e) {
             throw new ModelingException(0x11);
         }

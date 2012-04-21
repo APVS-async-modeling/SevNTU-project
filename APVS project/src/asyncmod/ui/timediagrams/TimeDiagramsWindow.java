@@ -28,8 +28,8 @@ public class TimeDiagramsWindow extends Dialog {
 
     protected Shell timeDiagramsShell;
 
-    private static int WIDTH = 600;
-    private static int HEIGHT = 600;
+    private static int WIDTH = 500;
+    private static int HEIGHT = 500;
     private boolean isVisible = false;
 
     /**
