@@ -253,8 +253,10 @@ public class ModelingEngine implements Runnable {
                                     Signal destinationSignal = results.signals.get(destinationContact);
                                     if (destinationContact.equals(event.contact)) {
                                         continue;
-                                    } 
-                                    else if(destinationSignal.getState(timecnt) == event.newstate) {
+                                    } else if(destinationSignal.isPredefined(timecnt)) {
+                                        logwriter.write("  Signal on input '" + destinationContact + "' is predefined and cannot be changed\n");
+                                        continue;
+                                    } else if(destinationSignal.getState(timecnt) == event.newstate) {
                                         logwriter.write("        Signal on  '" + destinationContact + "' is remains unchanged\n");
                                         continue;
                                     } else {
