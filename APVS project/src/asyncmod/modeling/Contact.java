@@ -2,16 +2,26 @@ package asyncmod.modeling;
 
 public class Contact implements Comparable<Contact> {
     protected String element;
-    protected Integer contact;
+    protected Integer cnumber;
     
-    public Contact(String element, Integer contact) {
+    public Contact(String element, Integer cnumber) {
         this.element = element;
-        this.contact = contact;
+        this.cnumber = cnumber;
     }
     
     public Contact(String contact) {
         this.element = contact.substring(0, contact.indexOf('='));
-        this.contact = Integer.parseInt(contact.substring(contact.indexOf('=') + 1));
+        this.cnumber= Integer.parseInt(contact.substring(contact.indexOf('=') + 1));
+    }
+    
+    
+    
+    public String getElement() {
+        return element;
+    }
+
+    public Integer getCnumber() {
+        return cnumber;
     }
     
     public String getContact() {
@@ -20,11 +30,11 @@ public class Contact implements Comparable<Contact> {
 
     public void setContact(String contact) {
         this.element = contact.substring(0, contact.indexOf('='));
-        this.contact = Integer.parseInt(contact.substring(contact.indexOf('=') + 1));
+        this.cnumber = Integer.parseInt(contact.substring(contact.indexOf('=') + 1));
     }
     
     public String toString() {
-        return element + "=" + contact;
+        return element + "=" + cnumber;
     }
     
     public int hashCode() {
@@ -32,14 +42,14 @@ public class Contact implements Comparable<Contact> {
     }
     
     public boolean equals(Contact other) {
-        return this.element.equals(other.element) && this.contact.equals(other.contact);
+        return this.element.equals(other.element) && this.cnumber.equals(other.cnumber);
     }
     public boolean equals(Object other) {
         return equals((Contact) other);
     }
     public int compareTo(Contact other) {
         return this.element.equals(other.element) 
-                ? this.contact.compareTo(other.contact)
+                ? this.cnumber.compareTo(other.cnumber)
                 : this.element.compareTo(other.element);
     }
 }

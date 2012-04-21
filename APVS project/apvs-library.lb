@@ -5,7 +5,7 @@ library:
     descr: 2-input 3-state AND with inventor
     ecnt: 0
     icnt: 2
-    name: 2_AND
+    name: 2_AND_OR
     ocnt: 1
     smask: 3
     table:
@@ -15,6 +15,9 @@ library:
     - [1, 0, 1]
     - [1, 1, 0]
     - [1, 2, 2]
+    - [2, 0, 1]
+    - [2, 1, 0]
+    - [2, 2, 2]
   JK_trigger:
     delay: 65
     descr: JK controlled trigger
@@ -57,7 +60,7 @@ library:
     descr: 3-input 3-state AND with inventor
     ecnt: 0
     icnt: 3
-    name: 3_AND
+    name: 3_AND_OR
     ocnt: 1
     smask: 3
     table:

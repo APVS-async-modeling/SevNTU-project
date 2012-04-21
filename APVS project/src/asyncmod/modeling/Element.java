@@ -18,6 +18,9 @@ public class Element {
     }
     
     public void process(int[] array) {
+        for(int n = icnt + ecnt; n < array.length; n++) {
+            array[n] = 2;
+        }
         for(Integer[] row : table) {
             if(row.length != array.length) {
                 return;
@@ -28,7 +31,7 @@ public class Element {
                     equal &= (row[n] == array[n]);
                 }
                 if(equal) {
-                    for(int n = ocnt + ecnt; n < array.length; n++) {
+                    for(int n = icnt + ecnt; n < array.length; n++) {
                         array[n] = row[n];
                     }
                     return;
@@ -39,7 +42,7 @@ public class Element {
         }
     }
     
-    public boolean checkIntegrity(String message) {
+    public boolean check() {
         if(name == null) return false;
         if(descr == null) return false;
         if(delay == -1) return false;
@@ -48,13 +51,13 @@ public class Element {
         if(ecnt == -1) return false;
         if(smask == -1) return false;
         if(table == null) return false;
-        if(cnames == null) return false;
+        //if(cnames == null) return false;
         
-        int columns = icnt + ocnt * 2  + ecnt;
+        int columns = icnt + ecnt * 2  + ocnt;
         int rows = (int)Math.pow(Integer.bitCount(smask) + 1, icnt + ecnt);
         
         if(table.length != rows) return false;
-        if(cnames.length != columns) return false;
+        //if(cnames.length != columns) return false;
         for(Integer[] row : table) {
             if(row.length != columns) return false;
         }
@@ -65,7 +68,7 @@ public class Element {
         return contact < icnt;
     }
     public boolean isOutput(int contact) {
-        return contact >= icnt && contact < ocnt;
+        return contact >= icnt && contact < icnt + ocnt;
     }
     public boolean isInternal(int contact) {
         return contact >= icnt + ocnt && contact < icnt + ocnt + ecnt;

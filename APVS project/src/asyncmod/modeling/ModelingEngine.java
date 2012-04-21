@@ -70,46 +70,97 @@ public class ModelingEngine implements Runnable {
         }
     }
     
-    public static void main(String[] args) {
+    public void run() {
         try {
-            new ModelingEngine("apvs-library.yaml", "apvs-scheme.yaml", "apvs-signal.yaml", "apvs-diagrams.yaml", "apvs-logs.yaml").run();
+            check();
         } catch (ModelingException e) {
             // TODO Auto-generated catch block
             e.printStackTrace();
         }
-    }
-    public void run() {
-        check();
         try {
             simulate();
         } catch (IOException e) {
             // TODO Auto-generated catch block
             e.printStackTrace();
-        } catch (ModelingException e) {
-            // TODO Auto-generated catch block
-            e.printStackTrace();
         }
     }
-    private void check() {
-        // TODO Auto-generated method stub
+    private void check() throws ModelingException {
+        // checking elements
+        for(String elementName : scheme.elements.keySet()) {
+            String elementType = scheme.elements.get(elementName);
+            Element element = library.library.get(elementType);
+            if(element == null) {
+                throw new ModelingException(0x20, "'" + elementName + "' [" + elementType + "]");
+            }
+        }
         
+        // checking circuits
+        for(String circuitName : scheme.circuits.keySet()) {
+            Circuit circuit = scheme.circuits.get(circuitName);
+            int outputs = 0;
+            for(Contact contact : circuit.contacts) {
+                Element element = library.library.get(scheme.elements.get(contact.element));
+                if(element == null) {
+                    if(scheme.inputs.contains(contact.element)) {
+                        outputs++;
+                    } else if(!scheme.outputs.contains(contact.element)) {
+                        throw new ModelingException(0x32, "Контакт " + contact.toString() + " в цепи " + circuitName);
+                    }
+                } else {
+                    if(element.isOutput(contact.cnumber)) {
+                        outputs++;
+                    } else if(element.isInternal(contact.cnumber)) {
+                        throw new ModelingException(0x31, "Контакт " + contact.toString() + " в цепи " + circuitName);
+                    } else if(contact.cnumber >= element.icnt + element.ocnt + element.ecnt) {
+                        throw new ModelingException(0x32, "Контакт " + contact.toString() + " в цепи " + circuitName);
+                    }
+                }
+            }
+            if(outputs > 1) {
+                throw new ModelingException(0x30, circuitName + ": " + circuit.contacts.toString());
+            } else if(outputs == 0) {
+                throw new ModelingException(0x33, circuitName + ": " + circuit.contacts.toString());
+            }
+        }
+        
+        // checking signals
+        for(Contact contact : signals.signals.keySet()) {
+            if(scheme.inputs.contains(contact.element) || scheme.outputs.contains(contact.element));
+            else if(scheme.elements.containsKey(contact.element)) {
+                Element element = library.library.get(scheme.elements.get(contact.element));
+                if(contact.cnumber >= element.icnt + element.ocnt + element.ecnt) {
+                    throw new ModelingException(0x41, contact.toString());
+                }
+            } else {
+                throw new ModelingException(0x40, contact.toString());
+            }
+        }
+        
+        // checking library
+        for(String elementName : library.library.keySet()) {
+            Element element = library.library.get(elementName);
+            if(!element.check()) {
+                throw new ModelingException(0x50, elementName);
+            }
+        }
     }
 
-    public void simulate() throws IOException, ModelingException{
+    public void simulate() throws IOException {
         events = new TreeMap<Long, List<Event>>();
         active = new TreeMap<Long, Set<String>>();
         results = new SignalBundle();
         
+        events.put(-1L, null);
         // converting input signals to modeling events
         for (Contact contact : signals.getSignals().keySet()) {
             Signal signal = (Signal) signals.getSignals().get(contact);
             for (Long time : signal.signal.keySet()) {
                 int state = signal.getState(time);
                 if (events.containsKey(time)) {
-                    events.get(time).add(new Event(contact, state, 0));
+                    events.get(time).add(new Event(contact, state, -1));
                 } else {
                     events.put(time, new LinkedList<Event>());
-                    events.get(time).add(new Event(contact, state, 0));
+                    events.get(time).add(new Event(contact, state, -1));
                 }
             }
         }
@@ -128,18 +179,18 @@ public class ModelingEngine implements Runnable {
             Element element = library.library.get(scheme.elements.get(elementName));
             for (int n = 0; n < element.icnt + element.ocnt + element.ecnt; n++) {
                 Signal signal = new Signal();
-                signal.signal.put(0L, 0x02);
+                signal.signal.put(-1L, 0x02);
                 results.signals.put(new Contact(elementName, n), signal);
             }
         }
         for (String inputName : scheme.getInputs()) {
             Signal signal = new Signal();
-            signal.signal.put(0L, 0x002);
+            signal.signal.put(-1L, 0x002);
             results.signals.put(new Contact(inputName, -1), signal);
         }
         for (String outputName : scheme.getOutputs()) {
             Signal signal = new Signal();
-            signal.signal.put(0L, 0x02);
+            signal.signal.put(-1L, 0x02);
             results.signals.put(new Contact(outputName, -1), signal);
         }
         
@@ -174,11 +225,11 @@ public class ModelingEngine implements Runnable {
                         sourceSignal.signal.put(timecnt, event.newstate);
                     }
                     
-                    if (source != null && (source.isInput(event.contact.contact) || source.isInternal(event.contact.contact))) {
-                        if (source.isInput(event.contact.contact)) {
-                            logwriter.write("  Input #" + event.contact.contact + " of element '" + event.contact.element + "' is changed to " + event.newstate + "\n");
-                        } else if (source.isInternal(event.contact.contact)) {
-                            logwriter.write("  Internal state #" + (event.contact.contact - source.icnt - source.ocnt) + " of element '" + event.contact.contact + "' is changed to " + event.newstate + "\n");
+                    if (source != null && (source.isInput(event.contact.cnumber) || source.isInternal(event.contact.cnumber))) {
+                        if (source.isInput(event.contact.cnumber)) {
+                            logwriter.write("  Input #" + event.contact.cnumber + " of element '" + event.contact.element + "' is changed to " + event.newstate + "\n");
+                        } else if (source.isInternal(event.contact.cnumber)) {
+                            logwriter.write("  Internal state #" + (event.contact.cnumber - source.icnt - source.ocnt) + " of element '" + event.contact.cnumber + "' is changed to " + event.newstate + "\n");
                         }
                         if (active.containsKey(timecnt)) {
                             active.get(timecnt).add(event.contact.element);
@@ -191,7 +242,7 @@ public class ModelingEngine implements Runnable {
                         if (source == null) {
                             logwriter.write("  Scheme input '" + event.contact.element + "' is changed to " + event.newstate + "\n");
                         } else {
-                            logwriter.write("  Output #" + (event.contact.contact - source.icnt) + " of element '" + event.contact.element + "' is changed to " + event.newstate + "\n");
+                            logwriter.write("  Output #" + (event.contact.cnumber - source.icnt) + " of element '" + event.contact.element + "' is changed to " + event.newstate + "\n");
                         }
                         for (String circuitName : scheme.circuits.keySet()) {
                             Circuit circuit = scheme.circuits.get(circuitName);
@@ -214,17 +265,14 @@ public class ModelingEngine implements Runnable {
                                         logwriter.write("        Scheme output '" + destinationContact.element + "' is changed to " + event.newstate + "\n");
                                     } else {
                                         Element destination = library.library.get(scheme.elements.get(destinationContact.element));
-                                        if (destination.isInput(destinationContact.contact)) {
-                                            logwriter.write("        Input #" + destinationContact.contact + " of element '" + destinationContact.element + "' is changed to " + event.newstate + "\n");
+                                        if (destination.isInput(destinationContact.cnumber)) {
+                                            logwriter.write("        Input #" + destinationContact.cnumber + " of element '" + destinationContact.element + "' is changed to " + event.newstate + "\n");
                                             if (active.containsKey(timecnt)) {
                                                 active.get(timecnt).add(destinationContact.element);
                                             } else {
                                                 active.put(timecnt, new TreeSet<String>());
                                                 active.get(timecnt).add(destinationContact.element);
                                             }
-                                        } else {
-                                            int ercode = destination.isOutput(destinationContact.contact) ? 0x30 : destination.isInternal(destinationContact.contact) ? 0x31 : 0x32;
-                                            throw new ModelingException(ercode, destinationContact.toString());
                                         }
                                     }
                                 }
@@ -292,5 +340,21 @@ public class ModelingEngine implements Runnable {
         
         logwriter.close();
         diawriter.close();
+    }
+
+    public Scheme getScheme() {
+        return scheme;
+    }
+    public SignalBundle getResults() {
+        return results;
+    }
+    public Library getLibrary() {
+        return library;
+    }
+    public NavigableMap<Long, List<Event>> getEvents() {
+        return events;
+    }
+    public NavigableMap<Long, Set<String>> getActive() {
+        return active;
     }
 }

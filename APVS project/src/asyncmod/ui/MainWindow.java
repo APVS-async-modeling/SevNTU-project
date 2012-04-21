@@ -3,7 +3,13 @@ package asyncmod.ui;
 import java.io.File;
 import java.io.IOException;
 import java.text.SimpleDateFormat;
+import java.util.Arrays;
 import java.util.Calendar;
+import java.util.LinkedList;
+import java.util.List;
+import java.util.Map;
+import java.util.NavigableMap;
+import java.util.Set;
 
 import org.eclipse.swt.SWT;
 import org.eclipse.swt.custom.SashForm;
@@ -38,7 +44,11 @@ import org.eclipse.swt.widgets.Text;
 import swing2swt.layout.BorderLayout;
 import asyncmod.about.AboutProgram;
 import asyncmod.about.AboutTeam;
+import asyncmod.modeling.Contact;
+import asyncmod.modeling.Event;
 import asyncmod.modeling.ModelingEngine;
+import asyncmod.modeling.ModelingException;
+import asyncmod.modeling.Signal;
 import asyncmod.ui.timediagrams.TimeDiagramsWindow;
 
 /**
@@ -58,10 +68,10 @@ public class MainWindow {
     private TimeDiagramsWindow timeDiagramsWindow;
 
     // buttons
-    private Button initialStateBtn;    
-    private Button stepBtn;
-    private Button fullRunBtn;
-    private Button runUntilBtn;
+    private Button initResetBtn;    
+    private Button stepFwdBtn;
+    private Button stepBwdBtn;
+    private Button gotoTimeBtn;
     private Button timeDiagramsBtn;
 
     // text fields
@@ -78,10 +88,10 @@ public class MainWindow {
     private static Table tableSignals;
 
     // menu items
-    private MenuItem resetMenuItem;
-    private MenuItem runUntilMenuItem;
-    private MenuItem fullRunMenuItem;
-    private MenuItem stepMenuItem;
+    private MenuItem initResetMenuItem;
+    private MenuItem stepFwdMenuItem;
+    private MenuItem stepBwdMenuItem;
+    private MenuItem gotoTimeMenuItem;
 
     // file dialogs
     private FileDialog dlgLibrary;
@@ -91,6 +101,11 @@ public class MainWindow {
 
     // Non-UI fields!
     //
+    
+    // modeling engine and index to browse thru results
+    private ModelingEngine engine;
+    private int index;
+    private Long[] nodes;
 
     //files
     private static File libraryFile;
@@ -249,15 +264,8 @@ public class MainWindow {
                 final String signalsFilePath = dlgSignals.open();
                 if (signalsFilePath != null) {
                     signalsFile = new File(signalsFilePath);
-                    setModelingButtonsAndMenuEnabled(true);
-                    
-                    // Creating the Modeling Core object:
-                    ModelingEngine engine = new ModelingEngine(libraryFile.getAbsolutePath(), discreteModelFile.getAbsolutePath(), signalsFile.getAbsolutePath());
-                    // run async modeling
-                    engine.run();
-
-                    modelingTimeText.setText("0");
-
+                    initResetBtn.setEnabled(true);
+                    initResetMenuItem.setEnabled(true);
                     String message = Messages.SIGNALS_FILE_SELECTED + signalsFilePath;
                     status(message);
                 } else {
@@ -301,17 +309,17 @@ public class MainWindow {
         Menu menu_3 = new Menu(menuItemModeling);
         menuItemModeling.setMenu(menu_3);
 
-        stepMenuItem = new MenuItem(menu_3, SWT.NONE);
-        stepMenuItem.setText("Step");
+        initResetMenuItem = new MenuItem(menu_3, SWT.NONE);
+        initResetMenuItem.setText("Init/Reset");
 
-        fullRunMenuItem = new MenuItem(menu_3, SWT.NONE);
-        fullRunMenuItem.setText("Full Run");
+        gotoTimeMenuItem = new MenuItem(menu_3, SWT.NONE);
+        gotoTimeMenuItem.setText("Goto time...");
 
-        runUntilMenuItem = new MenuItem(menu_3, SWT.NONE);
-        runUntilMenuItem.setText("Run Until...");
+        stepFwdMenuItem = new MenuItem(menu_3, SWT.NONE);
+        stepFwdMenuItem.setText("Step Forward");
 
-        resetMenuItem = new MenuItem(menu_3, SWT.NONE);
-        resetMenuItem.setText("Reset");
+        stepBwdMenuItem = new MenuItem(menu_3, SWT.NONE);
+        stepBwdMenuItem.setText("Step Backward");
 
         MenuItem menuItemAbout = new MenuItem(menu, SWT.CASCADE);
         menuItemAbout.setText("About");
@@ -362,23 +370,45 @@ public class MainWindow {
         rl_ControlButtonsComposite.fill = true;
         ControlButtonsComposite.setLayout(rl_ControlButtonsComposite);
 
-        initialStateBtn = new Button(ControlButtonsComposite, SWT.NONE);
-        initialStateBtn.setText("Initial State");
-
-        stepBtn = new Button(ControlButtonsComposite, SWT.NONE);
-        stepBtn.addSelectionListener(new SelectionAdapter() {
+        initResetBtn = new Button(ControlButtonsComposite, SWT.NONE);
+        initResetBtn.addSelectionListener(new SelectionAdapter() {
             @Override
             public void widgetSelected(SelectionEvent e) {
                 //TODO: do this!
+                initReset();
             }
         });
-        stepBtn.setText("Step");
+        initResetBtn.setText("Init/Reset");
 
-        fullRunBtn = new Button(ControlButtonsComposite, SWT.NONE);
-        fullRunBtn.setText("Full Run");
+        stepFwdBtn = new Button(ControlButtonsComposite, SWT.NONE);
+        stepFwdBtn.addSelectionListener(new SelectionAdapter() {
+            @Override
+            public void widgetSelected(SelectionEvent e) {
+                //TODO: do this!
+                stepFwd();
+            }
+        });
+        stepFwdBtn.setText("Step Forward");
 
-        runUntilBtn = new Button(ControlButtonsComposite, SWT.NONE);
-        runUntilBtn.setText("Run Until...");
+        stepBwdBtn = new Button(ControlButtonsComposite, SWT.NONE);
+        stepBwdBtn.addSelectionListener(new SelectionAdapter() {
+            @Override
+            public void widgetSelected(SelectionEvent e) {
+                //TODO: do this!
+                stepBwd();
+            }
+        });
+        stepBwdBtn.setText("Step Backward");
+
+        gotoTimeBtn = new Button(ControlButtonsComposite, SWT.NONE);
+        gotoTimeBtn.addSelectionListener(new SelectionAdapter() {
+            @Override
+            public void widgetSelected(SelectionEvent e) {
+                //TODO: Create new dialog window, where ask about necessary time
+                gotoTime(0);
+            }
+        });
+        gotoTimeBtn.setText("Goto time");
 
         timeDiagramsBtn = new Button(ControlButtonsComposite, SWT.NONE);
         timeDiagramsBtn.setText("Time diagrams...");
@@ -468,17 +498,25 @@ public class MainWindow {
         tableEvents.setLinesVisible(true);
         tableEvents.setHeaderVisible(true);
         
-        TableColumn tblclmnNewColumn_2 = new TableColumn(tableEvents, SWT.CENTER);
-        tblclmnNewColumn_2.setWidth(89);
-        tblclmnNewColumn_2.setText("Time");
+        TableColumn tblclmnTime = new TableColumn(tableEvents, SWT.CENTER);
+        tblclmnTime.setWidth(89);
+        tblclmnTime.setText("Time");
         
-        TableColumn tableColumn = new TableColumn(tableEvents, SWT.CENTER);
-        tableColumn.setWidth(82);
-        tableColumn.setText("Element num");
+        TableColumn tblclmnElement = new TableColumn(tableEvents, SWT.CENTER);
+        tblclmnElement.setWidth(82);
+        tblclmnElement.setText("Element");
         
-        TableColumn tblclmnContactNum = new TableColumn(tableEvents, SWT.CENTER);
-        tblclmnContactNum.setWidth(82);
-        tblclmnContactNum.setText("Contact num");
+        TableColumn tblclmnContact = new TableColumn(tableEvents, SWT.CENTER);
+        tblclmnContact.setWidth(82);
+        tblclmnContact.setText("Contact");
+        
+        TableColumn tblclmnState = new TableColumn(tableEvents, SWT.CENTER);
+        tblclmnState.setWidth(82);
+        tblclmnState.setText("New state");
+        
+        TableColumn tblclmnFrom = new TableColumn(tableEvents, SWT.CENTER);
+        tblclmnFrom.setWidth(82);
+        tblclmnFrom.setText("Created at");
         
         Group grpSignalsMatrix = new Group(modelingStateComposite, SWT.NONE);
         grpSignalsMatrix.setToolTipText(Messages.TOOLTIP_SIGNALS_MATRIX);
@@ -496,7 +534,7 @@ public class MainWindow {
         
         TableColumn tblclmnCurcuit = new TableColumn(tableSignals, SWT.CENTER);
         tblclmnCurcuit.setWidth(63);
-        tblclmnCurcuit.setText("Curcuit");
+        tblclmnCurcuit.setText("Contact");
         
         TableColumn tblclmnSignal = new TableColumn(tableSignals, SWT.CENTER);
         tblclmnSignal.setWidth(57);
@@ -569,18 +607,18 @@ public class MainWindow {
     
     private void setModelingButtonsAndMenuEnabled(boolean state) {
         // buttons:
-        initialStateBtn.setEnabled(state);
-        stepBtn.setEnabled(state);
-        fullRunBtn.setEnabled(state);
-        runUntilBtn.setEnabled(state);
+        initResetBtn.setEnabled(state);
+        stepFwdBtn.setEnabled(state);
+        stepBwdBtn.setEnabled(state);
+        gotoTimeBtn.setEnabled(state);
         // TODO: block timeDiagramsBtn with another buttons when done
         timeDiagramsBtn.setEnabled(true);
         
         // menus:
-        stepMenuItem.setEnabled(state);
-        fullRunMenuItem.setEnabled(state);
-        runUntilMenuItem.setEnabled(state);
-        resetMenuItem.setEnabled(state);
+        initResetMenuItem.setEnabled(state);
+        stepFwdMenuItem.setEnabled(state);
+        stepBwdMenuItem.setEnabled(state);
+        gotoTimeMenuItem.setEnabled(state);
     }
     
     /**
@@ -719,5 +757,95 @@ public class MainWindow {
             showMessage("Cannot set values to table: " + table.getToolTipText(), "Warning");
         }
     }
-
+    
+    private void initReset() {
+        // Creating the Modeling Core object and launching it
+        // TODO Allow to check log and diagram files
+        try {
+            engine = new ModelingEngine(libraryFile.getAbsolutePath(), discreteModelFile.getAbsolutePath(), 
+                    signalsFile.getAbsolutePath(), "test-diagrams.log", "test-logs.log");
+        } catch (ModelingException e) {
+            // TODO Auto-generated catch block
+            status("Error while launching modeling");
+            e.printStackTrace();
+        }
+        if(engine != null) {
+            engine.run();
+            index = 0;
+            setModelingButtonsAndMenuEnabled(true);
+            nodes = engine.getEvents().keySet().toArray(new Long[0]);
+            modelingTimeText.setText(nodes[0] + "ns");
+            status("Modeling was succesful, timerange is " + nodes[0] + "..." + nodes[nodes.length - 1]);
+            updateTables();
+        } else {
+            status("Error while launching modeling");
+        }
+    }
+    
+    private void stepFwd() {
+        index = Math.min(index + 1, nodes.length - 1);
+        modelingTimeText.setText(nodes[index] + "ns");
+        status("Step forward to node #" + index + " at " + nodes[index] + "ns");
+        updateTables();
+    }
+    
+    private void stepBwd() {
+        index = Math.max(index - 1, 0);
+        modelingTimeText.setText(nodes[index] + "ns");
+        status("Step backward to node #" + index + " at " + nodes[index] + "ns");
+        updateTables();
+    }
+    
+    private void gotoTime(long time) {
+        Long nearest = engine.getEvents().floorKey(time);
+        index = Arrays.binarySearch(nodes, nearest);
+        status("Goto node #" + index + " at " + nodes[index] + "ns");
+        updateTables();
+    }
+    
+    private void updateTables() {
+        String[][] table;
+        long time = nodes[index];
+        int n;
+        
+        // signals
+        Map<Contact, Signal> signals = engine.getResults().getSignals();
+        table = new String[signals.size()][2];
+        n = 0;
+        for(Contact contact : signals.keySet()) {
+            table[n][0] = contact.toString();
+            table[n][1] = signals.get(contact).getState(time).toString();
+            n++;   
+        }
+        setSignalsTableValues(table);
+        
+        // active
+        Set<String> active = engine.getActive().get(time);
+        if(active != null) {
+            table = new String[active.size()][1];
+            n = 0;
+            for(String elementName : active) {
+                table[n][0] = elementName;
+                n++;   
+            }
+            
+        } else {
+            table = new String[][]{{"<none>"}};
+        }
+        setActiveElementsTableValues(table);
+        
+        // events
+        NavigableMap<Long, List<Event>> events = engine.getEvents().tailMap(time, false);
+        List<String[]> temp = new LinkedList<String[]>();
+        for(Long evttime : events.keySet()) {
+            for(Event event : events.get(evttime)) {
+                if(event.getFrom() <= time) {
+                    temp.add(new String[] {evttime.toString(), event.getContact().getElement(), 
+                            event.getContact().getCnumber().toString(), event.getNewstate() + "", event.getFrom() + ""});
+                }
+            }
+        }
+        table = temp.toArray(new String[0][0]);
+        setEventsTableValues(table);
+    }
 }
