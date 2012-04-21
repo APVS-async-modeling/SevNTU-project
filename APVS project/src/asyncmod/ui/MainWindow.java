@@ -243,7 +243,7 @@ public class MainWindow {
 //                    try {
 //                        DUModel model = controller.parseDUModelFromFile();
 //                    } catch (IOException exc) {
-//                        showMessage(exc.getMessage(), "Warning");
+//                        showMessage(exc.getMessage(), "Error");
 //                    }
                     // TODO: show info about DU model in UI!
 
@@ -624,19 +624,19 @@ public class MainWindow {
      * Shows the message window.
      * 
      * @param text the text
-     * @param type the type of message ("Warning" | "Information").
+     * @param type the type of message ("Error" | "Information").
      */
     public static void showMessage(final String text, final String type) {
         int msgWindowType = 0;
-        if (type.equals("Warning")) {
-            msgWindowType |= SWT.ICON_WARNING;
+        if (type.equals("Error")) {
+            msgWindowType |= SWT.ICON_ERROR;
             addError(text);
         }
         if (type.equals("Information")) {
             msgWindowType |= SWT.ICON_INFORMATION;
             addToLog(text);
         }
-        MessageBox box = new MessageBox(Display.getDefault().getShells()[0], msgWindowType);
+        MessageBox box = new MessageBox(Display.getDefault().getShells()[0], msgWindowType | SWT.OK);
         box.setMessage(text);
         box.open();
     }
@@ -747,13 +747,12 @@ public class MainWindow {
         try {
             int count = 0;
             table.setItemCount(values.length);
-            System.out.println(table.getItems());
             for (TableItem item : table.getItems()) {
                 item.setText(values[count]);
                 count++;
             }
         } catch (IndexOutOfBoundsException e) {
-            showMessage("Cannot set values to table: " + table.getToolTipText(), "Warning");
+            showMessage("Cannot set values to table: " + table.getToolTipText(), "Error");
         }
     }
     
