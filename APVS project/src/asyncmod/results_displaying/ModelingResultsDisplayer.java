@@ -29,13 +29,12 @@ public class ModelingResultsDisplayer {
         Map<Contact, Signal> signals = engine.getResults().getSignals();
         table = new String[signals.size()][2];
         n = 0;
-        for(Contact contact : signals.keySet()) {
+        for (Contact contact : signals.keySet()) {
             table[n][0] = contact.toString();
-            table[n][1] = signals.get(contact).getState(time).toString();
-            if("2".equals(table[n][1])){
-                table[n][1] = "X";
-            }
-            n++;   
+
+            int state = signals.get(contact).getState(time);
+            table[n][1] = (state == 2) ? "X" : state + "";
+            n++;
         }
         MainWindow.setSignalsTableValues(table);
         
@@ -46,9 +45,9 @@ public class ModelingResultsDisplayer {
             n = 0;
             for(String elementName : active) {
                 table[n][0] = elementName;
-                n++;   
+                n++;
             }
-            
+
         } else {
             table = new String[][]{{"<none>"}};
         }

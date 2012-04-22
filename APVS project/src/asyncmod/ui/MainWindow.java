@@ -43,6 +43,7 @@ import asyncmod.about.AboutTeam;
 import asyncmod.modeling.Element;
 import asyncmod.modeling.ModelingEngine;
 import asyncmod.modeling.ModelingException;
+import asyncmod.modeling.Scheme;
 import asyncmod.results_displaying.ModelingResultsDisplayer;
 import asyncmod.ui.timediagrams.TimeDiagramsWindow;
 
@@ -95,7 +96,7 @@ public class MainWindow {
     //
     
     // modeling engine and index to browse thru results
-    private ModelingEngine engine;
+    private static ModelingEngine engine;
     private static int index;
     private static Long[] nodes;
     
@@ -182,7 +183,7 @@ public class MainWindow {
 
             private void updateTimeDiagramsWindowPosition() {
                 if (timeDiagramsWindow != null) {
-                    int xCoord = getRightUpperCornerPosition().x + Constants.SPACE_BETWEEN_WINDOWS;
+                    int xCoord = getRightUpperCornerPosition().x + UIConstants.SPACE_BETWEEN_WINDOWS;
                     int yCoord = getRightUpperCornerPosition().y;
                     timeDiagramsWindow.setPosition(xCoord, yCoord);
                 }
@@ -427,11 +428,11 @@ public class MainWindow {
         timeDiagramsBtn.addSelectionListener(new SelectionAdapter() {
             @Override
             public void widgetSelected(SelectionEvent e) {
-                final int coordX = getRightUpperCornerPosition().x + Constants.SPACE_BETWEEN_WINDOWS;
+                final int coordX = getRightUpperCornerPosition().x + UIConstants.SPACE_BETWEEN_WINDOWS;
                 final int coordY = getRightUpperCornerPosition().y;
                 if (timeDiagramsWindow == null) {
                     // singleton instance of TimeDiagram
-                    timeDiagramsWindow = new TimeDiagramsWindow(shell, SWT.NONE);
+                    timeDiagramsWindow = new TimeDiagramsWindow(shell, SWT.NONE, 2200, "test-diagrams.log");
                     timeDiagramsWindow.open(coordX, coordY);
                 } else {
                     if (timeDiagramsWindow.isVisible()) {
@@ -826,11 +827,18 @@ public class MainWindow {
         for (Element element : libraryElements) {
             String elementName = element.getName();
             String elementDescription = element.getDescr();
-            addElementToExpandBar(elementName, elementDescription);
+            String delay = String.valueOf(element.getDelay());
+            addElementToExpandBar(elementName, elementDescription, delay);
         }
     }
-    
-    public static void addElementToExpandBar(String elementName, String elementDescription) {
+
+    private static String getNumberOfSuchElementsInThisScheme(String elementName) {
+        int count = 0;
+        engine.getScheme().getElements();        
+        return null;
+    }
+
+    public static void addElementToExpandBar(String elementName, String elementDescription, String delay) {
         Composite composite = new Composite(bar, SWT.NONE);
         composite.setLayout(new GridLayout(1, false));
         Text textField = new Text(composite, SWT.WRAP | SWT.CENTER | SWT.MULTI);
@@ -847,5 +855,4 @@ public class MainWindow {
     public static Long getCurrentNode() {
         return nodes[index];
     }
-
 }

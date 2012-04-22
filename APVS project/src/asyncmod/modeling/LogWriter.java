@@ -1,8 +1,10 @@
-package asyncmod.ui;
+package asyncmod.modeling;
 
 import java.io.BufferedWriter;
 import java.io.IOException;
 import java.io.Writer;
+
+import asyncmod.ui.MainWindow;
 
 public class LogWriter extends BufferedWriter {
 

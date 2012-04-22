@@ -16,7 +16,6 @@ import java.util.TreeSet;
 
 import org.yaml.snakeyaml.Yaml;
 
-import asyncmod.ui.LogWriter;
 import asyncmod.ui.MainWindow;
 
 public class ModelingEngine implements Runnable {
