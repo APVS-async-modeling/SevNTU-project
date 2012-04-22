@@ -32,8 +32,8 @@ public class ModelingResultsDisplayer {
         for (Contact contact : signals.keySet()) {
             table[n][0] = contact.toString();
 
-            int state = signals.get(contact).getState(time);
-            table[n][1] = (state == 2) ? "X" : state + "";
+            Integer state = signals.get(contact).getState(time);
+            table[n][1] = (state == 2) ? "X" : state.toString();
             n++;
         }
         MainWindow.setSignalsTableValues(table);
