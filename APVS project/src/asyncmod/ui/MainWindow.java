@@ -475,9 +475,13 @@ public class MainWindow {
         tableActiveElements.setLinesVisible(true);
         tableActiveElements.setHeaderVisible(true);
         
-        TableColumn tblclmnNewColumn = new TableColumn(tableActiveElements, SWT.CENTER);
-        tblclmnNewColumn.setWidth(76);
-        tblclmnNewColumn.setText("Element num");
+        TableColumn tblclmnNewName = new TableColumn(tableActiveElements, SWT.CENTER);
+        tblclmnNewName.setWidth(76);
+        tblclmnNewName.setText("Element name");
+       
+        TableColumn tblclmnType = new TableColumn(tableActiveElements, SWT.CENTER);
+        tblclmnType.setWidth(76);
+        tblclmnType.setText("Element type");
         
         Group grpActionsTable = new Group(modelingStateComposite, SWT.NONE);
         grpActionsTable.setText("Events");
