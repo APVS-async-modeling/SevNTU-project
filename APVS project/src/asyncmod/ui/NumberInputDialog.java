@@ -11,9 +11,12 @@ import org.eclipse.swt.widgets.Label;
 import org.eclipse.swt.widgets.Listener;
 import org.eclipse.swt.widgets.Shell;
 import org.eclipse.swt.widgets.Text;
+import org.eclipse.swt.events.KeyAdapter;
+import org.eclipse.swt.events.KeyEvent;
 
 public class NumberInputDialog extends Dialog {
   Long value;
+private Shell shell;
 
   /**
    * @param parent
@@ -37,8 +40,7 @@ public class NumberInputDialog extends Dialog {
    */
   public Long open() {
     Shell parent = getParent();
-    final Shell shell =
-      new Shell(parent, SWT.TITLE | SWT.BORDER | SWT.APPLICATION_MODAL);
+    shell = new Shell(parent, SWT.TITLE | SWT.BORDER | SWT.APPLICATION_MODAL);
     shell.setText("Modeling time input");
 
     shell.setLayout(new GridLayout(2, true));
@@ -47,8 +49,22 @@ public class NumberInputDialog extends Dialog {
     label.setText("Please enter new modeling time:");
 
     final Text text = new Text(shell, SWT.SINGLE | SWT.BORDER);
+    text.addKeyListener(new KeyAdapter() {
+        @Override
+        public void keyPressed(KeyEvent e) {
+            if(e.keyCode == 13){
+                try {
+                    value = Long.parseLong(text.getText());    
+                    close();
+                  } catch (Exception ex) {
+
+                  }
+            }
+        }
+    });
 
     final Button buttonOK = new Button(shell, SWT.PUSH);
+    buttonOK.setGrayed(true);
     buttonOK.setText("Ok");
     buttonOK.setLayoutData(new GridData(GridData.HORIZONTAL_ALIGN_END));
     Button buttonCancel = new Button(shell, SWT.PUSH);
@@ -97,4 +113,8 @@ public class NumberInputDialog extends Dialog {
 
     return value;
   }
+  
+    private void close() {
+        shell.close();
+    }
 }
