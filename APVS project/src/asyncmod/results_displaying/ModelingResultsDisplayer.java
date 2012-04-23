@@ -41,10 +41,11 @@ public class ModelingResultsDisplayer {
         // active
         Set<String> active = engine.getActive().get(time);
         if(active != null) {
-            table = new String[active.size()][1];
+            table = new String[active.size()][2];
             n = 0;
             for(String elementName : active) {
                 table[n][0] = elementName;
+                table[n][1] = engine.getScheme().getElements.get(elementName);
                 n++;
             }
 
