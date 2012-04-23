@@ -45,7 +45,7 @@ public class ModelingResultsDisplayer {
             n = 0;
             for(String elementName : active) {
                 table[n][0] = elementName;
-                table[n][1] = engine.getScheme().getElements.get(elementName);
+                table[n][1] = engine.getScheme().getElements().get(elementName);
                 n++;
             }
 
