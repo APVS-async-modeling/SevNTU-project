@@ -432,7 +432,7 @@ public class MainWindow {
                 final int coordY = getRightUpperCornerPosition().y;
                 if (timeDiagramsWindow == null) {
                     // singleton instance of TimeDiagram
-                    timeDiagramsWindow = new TimeDiagramsWindow(shell, SWT.NONE, 2200, "test-diagrams.log");
+                    timeDiagramsWindow = new TimeDiagramsWindow(shell, SWT.NONE, nodes[nodes.length - 1], "test-diagrams.log");
                     timeDiagramsWindow.open(coordX, coordY);
                 } else {
                     if (timeDiagramsWindow.isVisible()) {
@@ -603,9 +603,7 @@ public class MainWindow {
         stepFwdBtn.setEnabled(state);
         stepBwdBtn.setEnabled(state);
         gotoTimeBtn.setEnabled(state);
-        // TODO: block timeDiagramsBtn with another buttons when done
-        timeDiagramsBtn.setEnabled(true);
-        
+        timeDiagramsBtn.setEnabled(state);        
         // menus:
         initResetMenuItem.setEnabled(state);
         stepFwdMenuItem.setEnabled(state);

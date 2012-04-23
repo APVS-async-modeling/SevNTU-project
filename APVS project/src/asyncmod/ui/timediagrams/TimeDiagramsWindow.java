@@ -14,6 +14,7 @@ import org.eclipse.swt.events.ControlEvent;
 import org.eclipse.swt.events.ControlListener;
 import org.eclipse.swt.events.SelectionEvent;
 import org.eclipse.swt.events.SelectionListener;
+import org.eclipse.swt.graphics.Color;
 import org.eclipse.swt.graphics.GC;
 import org.eclipse.swt.graphics.Image;
 import org.eclipse.swt.graphics.Point;
@@ -48,23 +49,29 @@ public class TimeDiagramsWindow extends Dialog {
     private List<String> lines;
     private int LastModelingTime;
     
-    Image originalImage = null;
+    private int width;
+    private int height = 10000;
+    
+    Image image = null;
     private Canvas canvas;
     
-    public TimeDiagramsWindow(final Shell parent, final int style, int lastModelingTime, String pathToDiagramsLogFile) {
+    Color WHITE = new Color(Display.getDefault(), 255, 255, 255);
+    Color LIGHT_GRAY = new Color(Display.getDefault(), 240, 240, 240);
+    
+    public TimeDiagramsWindow(final Shell parent, final int style, long lastModelingTime, String pathToDiagramsLogFile) {
         super(parent, style);
         this.pathToDiagramsLogFile = pathToDiagramsLogFile;
-        this.LastModelingTime = lastModelingTime;
+        this.LastModelingTime = (int)lastModelingTime;
+        this.width = LastModelingTime + 100;
     }
 
-    public Object open(final int coordX, final int coordY) {        
+    public Object open(final int coordX, final int coordY) {       
         try {
             fr = new BufferedReader(new FileReader(new File(pathToDiagramsLogFile)));
             lines = new ArrayList<String>();
             String line;
-
             while ((line = fr.readLine()) != null) {
-                lines.add(line);
+                lines.add(line.replaceAll("\t+", "           "));
             }
         } catch (FileNotFoundException e) {
             MainWindow.showMessage(Messages.TIME_DIAGRAMS_COULD_NOT_OPEN_LOGFILE + this.pathToDiagramsLogFile, "Error");
@@ -143,12 +150,12 @@ public class TimeDiagramsWindow extends Dialog {
             public void controlMoved(final ControlEvent e) { }
         });
 
-        final Image image = new Image(Display.getDefault(), 400, 500);
+        final Image image = new Image(Display.getDefault(), width, height);
         final Point origin = new Point(0, 0);
-        
+
         canvas = new Canvas(sashForm, SWT.NO_BACKGROUND | SWT.V_SCROLL | SWT.H_SCROLL);
         canvas.setRedraw(true);
-        
+
         final ScrollBar hBar = canvas.getHorizontalBar();
         hBar.addListener(SWT.Selection, new Listener() {
           public void handleEvent(Event e) {
@@ -197,18 +204,8 @@ public class TimeDiagramsWindow extends Dialog {
         canvas.addListener(SWT.Paint, new Listener() {
           public void handleEvent(Event e) {
             GC gc = e.gc;
-            redrawTimeDiagramsToImage(gc);
-//            gc.drawImage(image, origin.x, origin.y);
-//            Rectangle rect = image.getBounds();
-//            Rectangle client = canvas.getClientArea();
-//            int marginWidth = client.width - rect.width;
-//            if (marginWidth > 0) {
-//              gc.fillRectangle(rect.width, 0, marginWidth, client.height);
-//            }
-//            int marginHeight = client.height - rect.height;
-//            if (marginHeight > 0) {
-//              gc.fillRectangle(0, rect.height, client.width, marginHeight);
-//            }
+            redrawTimeDiagrams(image);
+            gc.drawImage(image, origin.x, origin.y);
           }
         });
 
@@ -264,9 +261,14 @@ public class TimeDiagramsWindow extends Dialog {
 
     private void addElement(String element, String contact) {
         int indexOfItem = getItemIndexByElementName(element);
-        if(indexOfItem == -1) { // add a new element
+        if (indexOfItem == -1) { // add a new element
             TreeItem item = new TreeItem(tree, SWT.NONE);
             item.setText(element);
+            if (!"-1".equals(contact))
+            {
+                TreeItem litem = new TreeItem(item, SWT.NONE);
+                litem.setText(contact);
+            }
         } else { // add a contact to existing element
             TreeItem litem = new TreeItem(tree.getItem(indexOfItem), SWT.NONE);
             litem.setText(contact);
@@ -276,7 +278,7 @@ public class TimeDiagramsWindow extends Dialog {
     private int getItemIndexByElementName(String elementName) {
         int result = -1;
         Item [] items = tree.getItems();
-        for(int i=0; i< items.length; i++) {
+        for(int i = 0; i < items.length; i++) {
             if(items[i].getText().equals(elementName)) {
                 return i;
             }
@@ -284,26 +286,76 @@ public class TimeDiagramsWindow extends Dialog {
         return result;
     }
 
-    private void redrawTimeDiagramsToImage(GC gc) {
-        int width = LastModelingTime, height = HEIGHT;
-        gc.fillRectangle(0, 0, width, height); // залить белым цветом прямоугольник
-        
-        int cursorPosition = 25;
+    private void redrawTimeDiagrams(Image image) {
 
-        for(TreeItem element : tree.getItems()) {
-        String elementName = element.getText();
-        gc.drawString(element.getText(), 15, cursorPosition);        
-            for(TreeItem contact : element.getItems()) {
-                gc.drawString(contact.getText(), 35, cursorPosition);                
-                cursorPosition += 40;
-            }            
+        GC gc = new GC(image);
+        gc.setBackground(LIGHT_GRAY);
+
+        gc.fillRectangle(0, 0, width, height); // залить белым цветом прямоугольник
+
+        int elementTextDistance = 15; // расстояние между левым краем и подписью элемента
+        int contactTextDistance = 35; // расстояние между левым краем и подписью контакта
+        int distanceBetweenLines = 80; // расстояние между линиями
+
+        int cursorPosition = 25; // начальный сдвиг курсора вниз по оси Y
+
+        int count = 0;
+
+        for (TreeItem element : tree.getItems()) { // каждый элемент
+            if (element.getItemCount() == 0) {
+                count++;
+                otrisovkaOdnoiDiagrammy(gc, contactTextDistance, cursorPosition, element.getText(), lines.get(count));                
+                cursorPosition += distanceBetweenLines; // сдвинуть курсор вниз по оси Y к следующей линии
+            }
+            else {          
+                String elementName = element.getText();
+                gc.drawString(elementName, elementTextDistance, cursorPosition); // рисуем имя элемента                
+                for (TreeItem contact : element.getItems()) { // каждый контакт
+                    count++;                    
+                    otrisovkaOdnoiDiagrammy(gc, contactTextDistance, cursorPosition, contact.getText(), lines.get(count));
+                    cursorPosition += distanceBetweenLines; // сдвинуть курсор вниз по оси Y к следующей линии
+                }
+            }
         }
-        
-        //gc.fillRectangle(0, 0, width, height); // залить белым цветом прямоугольник
-        //gc.drawLine(0, 0, width, height); // провести диагональную линию 1
-        //gc.drawLine(0, height, width, 0); // провести диагональную линию 2
-        //gc.drawLine(0, 0, (int)(150*Math.random()), 150);
         gc.dispose(); // обязательно сделать это в конце отрисовки!        
+    }
+
+    private void otrisovkaOdnoiDiagrammy(GC gc, int contactTextDistance, int cursorPosition, String text, String inputFileLine) {
+        gc.drawString(text, contactTextDistance, cursorPosition); // нарисовать подпись контакта              
+        strelka(gc, contactTextDistance + 10, cursorPosition, width - 15, cursorPosition, 7); // нарисовать линию со стрелочкой = диаграмму для текущего контакта         
+        сhertocka(gc, contactTextDistance + 10, cursorPosition, 5); // нарисовать черточку в начале линии
+        // и так далее..
+
+        risuemPodpisiPodLiniei(gc, contactTextDistance + 10, cursorPosition);
+        
+        // пример:
+        gc.drawString(inputFileLine, contactTextDistance, cursorPosition + 35);
+        // это отображение строчки входного файла, которая соответствует текущему контакту, для которого мы выше рисовали временную диаграмму.        
+        // тебе надо использовать переменную inputFileLine, чтобы доставать из нее значение сигналов
+    }
+
+    private void risuemPodpisiPodLiniei(GC gc, int x, int y) {
+        System.out.println(LastModelingTime);
+        double step = (int) Math.sqrt(LastModelingTime + 0.0);
+        for (double i = x; i < LastModelingTime; i += step) {
+            int currentPosition = (int)i;
+            сhertocka(gc, currentPosition, y, 4);
+            String curPosition = currentPosition + "";
+            
+            gc.drawString(curPosition, currentPosition - (curPosition.length() * 5 / 2), y + 13);
+        }
+    }
+
+    /** Отрисовка вертикальной черточки +5 и -5 от заданной центральной точки.*/
+    private void сhertocka(GC gc, int x, int y, int size) {
+        gc.drawLine(x, y - size, x, y + size);
+    }
+
+    private void strelka(GC gc, int x1, int y1, int x2, int y2, int size) {
+        gc.drawLine(x1, y1, x2, y2);
+        gc.drawLine(x2, y2, x2 - size, y2 - size); // 1-ая половинка стрелочки
+        gc.drawLine(x2, y2, x2 - size, y2 + size); // 2-ая половинка стрелочки
+        gc.drawLine(x2 - size, y2 - size, x2 - size, y2 + size); // соединяем задние точки стрелки
     }
 
 }
