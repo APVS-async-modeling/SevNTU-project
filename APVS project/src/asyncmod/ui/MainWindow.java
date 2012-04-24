@@ -1,10 +1,19 @@
 package asyncmod.ui;
 
+import java.io.BufferedReader;
+import java.io.BufferedWriter;
 import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileNotFoundException;
+import java.io.FileReader;
+import java.io.FileWriter;
+import java.io.IOException;
+import java.io.InputStream;
 import java.text.SimpleDateFormat;
 import java.util.Arrays;
 import java.util.Calendar;
 import java.util.Collection;
+import java.util.Map;
 
 import org.eclipse.swt.SWT;
 import org.eclipse.swt.custom.SashForm;
@@ -12,7 +21,6 @@ import org.eclipse.swt.events.ControlEvent;
 import org.eclipse.swt.events.ControlListener;
 import org.eclipse.swt.events.SelectionAdapter;
 import org.eclipse.swt.events.SelectionEvent;
-import org.eclipse.swt.graphics.Color;
 import org.eclipse.swt.graphics.Point;
 import org.eclipse.swt.layout.FillLayout;
 import org.eclipse.swt.layout.GridData;
@@ -36,11 +44,13 @@ import org.eclipse.swt.widgets.Table;
 import org.eclipse.swt.widgets.TableColumn;
 import org.eclipse.swt.widgets.TableItem;
 import org.eclipse.swt.widgets.Text;
+import org.yaml.snakeyaml.Yaml;
 
 import swing2swt.layout.BorderLayout;
 import asyncmod.about.AboutProgram;
 import asyncmod.about.AboutTeam;
 import asyncmod.modeling.Element;
+import asyncmod.modeling.Library;
 import asyncmod.modeling.ModelingEngine;
 import asyncmod.modeling.ModelingException;
 import asyncmod.modeling.Scheme;
@@ -52,7 +62,7 @@ public class MainWindow {
     // UI fields!
     //
 
-    protected Shell shell;    
+    protected static Shell shell;    
     protected Display display;
     // sizes
     private static final int WIDTH = 790;
@@ -111,7 +121,22 @@ public class MainWindow {
     // etc
     private final static Calendar cal = Calendar.getInstance();
     static SimpleDateFormat dateFormatter = new SimpleDateFormat("HH:mm:ss '('yyyy.MM.dd')'");
-    private static ExpandBar bar;    
+    private static ExpandBar bar;
+    private MenuItem mntmSaveModelingResults;    
+    private Text textLibraryEditor;
+    private Text textSchemeEditor;
+    private Text textSignalsEditor;
+    private TabItem tabLibraryEditor;
+    private Button btnSaveLibrary;
+    private Button btnReloadLibrary;
+    private TabItem tabSchemeEditor;
+    private Button btnSaveScheme;
+    private Button btnReloadScheme;
+    private TabItem tabSignalsEditor;
+    private Button btnSaveSignals;
+    private Button btnReloadSignals;
+    private static BufferedReader br;
+    private static BufferedWriter bw;
       
     
     /**
@@ -175,10 +200,12 @@ public class MainWindow {
         shell.addControlListener(new ControlListener() {
             public void controlResized(final ControlEvent e) {
                 updateTimeDiagramsWindowPosition();
+                bar.redraw();
             }
 
             public void controlMoved(final ControlEvent e) {
                 updateTimeDiagramsWindowPosition();
+                bar.redraw();
             }
 
             private void updateTimeDiagramsWindowPosition() {
@@ -221,10 +248,32 @@ public class MainWindow {
             public void widgetSelected(final SelectionEvent e) {
                 final String libraryFilePath = dlgLibrary.open();
                 if (libraryFilePath != null) {
-                    libraryFile = new File(libraryFilePath);  
-                    openDiscreteModelMenuItem.setEnabled(true);                    
-                    String message = Messages.LIBRARY_FILE_SELECTED + libraryFilePath;
-                    status(message);
+                    libraryFile = new File(libraryFilePath);
+                    readFileToTextField(textLibraryEditor, libraryFile);
+                    openDiscreteModelMenuItem.setEnabled(true);
+                    
+                    Yaml yaml = new Yaml();
+                    InputStream stream = null;
+                    Library library = null;
+                    
+                    try {
+                        stream = new FileInputStream(libraryFilePath);
+                    } catch (FileNotFoundException ex) {
+                        showMessage(Messages.ERROR_FILE_NOT_FOUND + libraryFilePath, "Error");
+                    }
+                    try {
+                        library = (Library) yaml.load(stream);
+                        updateExpandBarElements(library.getLibrary().values());
+                        String message = Messages.LIBRARY_FILE_SELECTED + libraryFilePath;
+                        status(message);
+                    } catch(Exception ex) {
+                        showMessage(Messages.ERROR_WRONG_LIBRARY_DOCUMENT + libraryFilePath, "Error");                        
+                    }
+                    
+                    textLibraryEditor.setEnabled(true);
+                    btnReloadLibrary.setEnabled(true);
+                    btnSaveLibrary.setEnabled(true);
+                    
                 } else {
                     status(Messages.LIBRARY_FILE_NOT_SELECTED);
                 }
@@ -237,6 +286,7 @@ public class MainWindow {
                 final String discreteModelFilePath = dlgDiscreteModel.open();
                 if (discreteModelFilePath != null) {
                     discreteModelFile = new File(discreteModelFilePath);
+                    readFileToTextField(textSchemeEditor, discreteModelFile);
 //                    DUModelController controller = new DUModelController(discreteModelFilePath);
 //                    try {
 //                        DUModel model = controller.parseDUModelFromFile();
@@ -244,6 +294,10 @@ public class MainWindow {
 //                        showMessage(exc.getMessage(), "Error");
 //                    }
 
+                    textSchemeEditor.setEnabled(true);
+                    btnReloadScheme.setEnabled(true);
+                    btnSaveScheme.setEnabled(true);
+                    
                     openSignalsFileMenuItem.setEnabled(true);
 
                     final String message = Messages.DISCRETE_MODEL_FILE_SELECTED + discreteModelFilePath;
@@ -260,8 +314,12 @@ public class MainWindow {
                 final String signalsFilePath = dlgSignals.open();
                 if (signalsFilePath != null) {
                     signalsFile = new File(signalsFilePath);
+                    readFileToTextField(textSignalsEditor, signalsFile);
+                    textSignalsEditor.setEnabled(true);
+                    btnReloadSignals.setEnabled(true);
+                    btnSaveSignals.setEnabled(true);                    
                     initResetBtn.setEnabled(true);
-                    initResetMenuItem.setEnabled(true);
+                    initResetMenuItem.setEnabled(true);                    
                     String message = Messages.SIGNALS_FILE_SELECTED + signalsFilePath;
                     status(message);
                 } else {
@@ -276,12 +334,19 @@ public class MainWindow {
         Menu menu_5 = new Menu(mntmSave);
         mntmSave.setMenu(menu_5);
 
-        MenuItem mntmSaveModelingResults = new MenuItem(menu_5, SWT.NONE);
+        mntmSaveModelingResults = new MenuItem(menu_5, SWT.NONE);
         mntmSaveModelingResults.addSelectionListener(new SelectionAdapter() {
             @Override
             public void widgetSelected(SelectionEvent e) {
                 String fileToResultsSavingPath = dlgResultsSaving.open();
                 if(fileToResultsSavingPath != null) {
+                    try { 
+                        FileWriter fr = new FileWriter(new File(fileToResultsSavingPath));
+                        fr.write(modelingResultsText.getText() + "\n");
+                        fr.close();                        
+                    } catch (IOException ex){
+                        
+                    }
                     status(Messages.RESULTS_SAVED);
                 } else {
                     status(Messages.RESULTS_NOT_SAVED);
@@ -356,7 +421,7 @@ public class MainWindow {
         TabFolder mainWindowTabFolder = new TabFolder(shell, SWT.NONE);
 
         TabItem MainWindowTab = new TabItem(mainWindowTabFolder, SWT.NONE);
-        MainWindowTab.setText("Main Window");
+        MainWindowTab.setText("Modeling");
 
         Composite mainComposite = new Composite(mainWindowTabFolder, SWT.NONE);
         MainWindowTab.setControl(mainComposite);
@@ -451,20 +516,20 @@ public class MainWindow {
         elementsComposite.setLayout(new BorderLayout(0, 0));
         
         Group grpElementTypes = new Group(elementsComposite, SWT.NONE);
-        grpElementTypes.setText("Element types:");
+        grpElementTypes.setText("Available element types:");
         grpElementTypes.setLayoutData(BorderLayout.CENTER);
         grpElementTypes.setLayout(new FillLayout(SWT.HORIZONTAL));
         
         bar = new ExpandBar(grpElementTypes, SWT.BORDER | SWT.V_SCROLL);                
         bar.setSpacing(5);
-        
+
         Composite modelingStateComposite = new Composite(sashForm, SWT.BORDER);
         modelingStateComposite.setLayout(new GridLayout(3, false));
         
         Group grpActiveElementsList = new Group(modelingStateComposite, SWT.NONE);
         grpActiveElementsList.setToolTipText(Messages.TOOLTIP_ACTIVE_ELEMENTS_TABLE);
         GridData gd_grpActiveElementsList = new GridData(SWT.FILL, SWT.FILL, true, true, 1, 1);
-        gd_grpActiveElementsList.widthHint = 134;
+        gd_grpActiveElementsList.widthHint = 81;
         gd_grpActiveElementsList.heightHint = 375;
         grpActiveElementsList.setLayoutData(gd_grpActiveElementsList);
         grpActiveElementsList.setText("Active elements");
@@ -475,13 +540,9 @@ public class MainWindow {
         tableActiveElements.setLinesVisible(true);
         tableActiveElements.setHeaderVisible(true);
         
-        TableColumn tblclmnNewName = new TableColumn(tableActiveElements, SWT.CENTER);
-        tblclmnNewName.setWidth(76);
-        tblclmnNewName.setText("Element name");
-       
-        TableColumn tblclmnType = new TableColumn(tableActiveElements, SWT.CENTER);
-        tblclmnType.setWidth(76);
-        tblclmnType.setText("Element type");
+        TableColumn tblclmnNewColumn = new TableColumn(tableActiveElements, SWT.CENTER);
+        tblclmnNewColumn.setWidth(76);
+        tblclmnNewColumn.setText("Element num");
         
         Group grpActionsTable = new Group(modelingStateComposite, SWT.NONE);
         grpActionsTable.setText("Events");
@@ -521,7 +582,7 @@ public class MainWindow {
         grpSignalsMatrix.setToolTipText(Messages.TOOLTIP_SIGNALS_MATRIX);
         GridData gd_grpSignalsMatrix = new GridData(SWT.FILL, SWT.FILL, true, true, 1, 1);
         gd_grpSignalsMatrix.heightHint = 375;
-        gd_grpSignalsMatrix.widthHint = 170;
+        gd_grpSignalsMatrix.widthHint = 112;
         grpSignalsMatrix.setLayoutData(gd_grpSignalsMatrix);
         grpSignalsMatrix.setText("Signals");
         grpSignalsMatrix.setLayout(new FillLayout(SWT.HORIZONTAL));
@@ -541,8 +602,104 @@ public class MainWindow {
         
         sashForm.setWeights(new int[] { 1, 4 });
         
+        tabLibraryEditor = new TabItem(mainWindowTabFolder, SWT.NONE);
+        tabLibraryEditor.setText("Library Editor");
+        
+        Composite composite = new Composite(mainWindowTabFolder, SWT.NONE);
+        tabLibraryEditor.setControl(composite);
+        composite.setLayout(new BorderLayout(0, 0));
+        
+        textLibraryEditor = new Text(composite, SWT.BORDER | SWT.WRAP | SWT.V_SCROLL | SWT.MULTI);
+        textLibraryEditor.setLayoutData(BorderLayout.CENTER);
+        
+        Composite composite_3 = new Composite(composite, SWT.NONE);
+        composite_3.setLayoutData(BorderLayout.NORTH);
+        composite_3.setLayout(new GridLayout(2, false));
+        
+        btnSaveLibrary = new Button(composite_3, SWT.NONE);
+        btnSaveLibrary.addSelectionListener(new SelectionAdapter() {
+            @Override
+            public void widgetSelected(SelectionEvent e) {
+                saveFileFromTextField(textLibraryEditor, libraryFile);
+            }
+        });
+        btnSaveLibrary.setText("Save Library");
+        
+        btnReloadLibrary = new Button(composite_3, SWT.NONE);
+        btnReloadLibrary.addSelectionListener(new SelectionAdapter() {
+            @Override
+            public void widgetSelected(SelectionEvent e) {
+                readFileToTextField(textLibraryEditor, libraryFile);
+            }
+        });
+        btnReloadLibrary.setText("Reload Library");
+        
+        tabSchemeEditor = new TabItem(mainWindowTabFolder, SWT.NONE);
+        tabSchemeEditor.setText("Scheme Editor");
+        
+        Composite composite_1 = new Composite(mainWindowTabFolder, SWT.NONE);
+        tabSchemeEditor.setControl(composite_1);
+        composite_1.setLayout(new BorderLayout(0, 0));
+        
+        textSchemeEditor = new Text(composite_1, SWT.BORDER | SWT.V_SCROLL | SWT.MULTI);
+        textSchemeEditor.setLayoutData(BorderLayout.CENTER);
+        
+        Composite composite_2 = new Composite(composite_1, SWT.NONE);
+        composite_2.setLayoutData(BorderLayout.NORTH);
+        composite_2.setLayout(new GridLayout(2, false));
+        
+        btnSaveScheme = new Button(composite_2, SWT.NONE);
+        btnSaveScheme.addSelectionListener(new SelectionAdapter() {
+            @Override
+            public void widgetSelected(SelectionEvent e) {
+                saveFileFromTextField(textSchemeEditor, discreteModelFile);
+            }
+        });
+        btnSaveScheme.setText("Save Scheme");
+        
+        btnReloadScheme = new Button(composite_2, SWT.NONE);
+        btnReloadScheme.addSelectionListener(new SelectionAdapter() {
+            @Override
+            public void widgetSelected(SelectionEvent e) {
+                readFileToTextField(textSchemeEditor, discreteModelFile);
+            }
+        });
+        btnReloadScheme.setText("Reload Scheme");
+        
+        tabSignalsEditor = new TabItem(mainWindowTabFolder, SWT.NONE);
+        tabSignalsEditor.setText("Signals Editor");
+        
+        Composite composite_4 = new Composite(mainWindowTabFolder, SWT.NONE);
+        tabSignalsEditor.setControl(composite_4);
+        composite_4.setLayout(new BorderLayout(0, 0));
+        
+        textSignalsEditor = new Text(composite_4, SWT.BORDER | SWT.V_SCROLL | SWT.MULTI);
+        textSignalsEditor.setLayoutData(BorderLayout.CENTER);
+        
+        Composite composite_5 = new Composite(composite_4, SWT.NONE);
+        composite_5.setLayoutData(BorderLayout.NORTH);
+        composite_5.setLayout(new GridLayout(2, false));
+        
+        btnSaveSignals = new Button(composite_5, SWT.NONE);
+        btnSaveSignals.addSelectionListener(new SelectionAdapter() {
+            @Override
+            public void widgetSelected(SelectionEvent e) {
+                saveFileFromTextField(textSignalsEditor, signalsFile);
+            }
+        });
+        btnSaveSignals.setText("Save Signals");
+        
+        btnReloadSignals = new Button(composite_5, SWT.NONE);
+        btnReloadSignals.addSelectionListener(new SelectionAdapter() {
+            @Override
+            public void widgetSelected(SelectionEvent e) {
+                readFileToTextField(textSignalsEditor, signalsFile);
+            }
+        });
+        btnReloadSignals.setText("Reload Signals");
+        
         TabItem LogTab = new TabItem(mainWindowTabFolder, SWT.NONE);
-        LogTab.setText("Additional");
+        LogTab.setText("Logs and results");
 
         Composite logComposite = new Composite(mainWindowTabFolder, SWT.NONE);
         LogTab.setControl(logComposite);
@@ -591,7 +748,7 @@ public class MainWindow {
         fullLogText = new Text(fullLogComposite, SWT.BORDER | SWT.READ_ONLY | SWT.WRAP | SWT.V_SCROLL | SWT.MULTI);
         fullLogText.setEditable(false);
               
-        setModelingButtonsAndMenuEnabled(false);        
+        setControlsAndMenusEnabled(false);        
     }
 
     private final Point getRightUpperCornerPosition() {
@@ -601,20 +758,28 @@ public class MainWindow {
         return point;
     }
     
-    private void setModelingButtonsAndMenuEnabled(boolean state) {
-        // buttons:
+    private void setControlsAndMenusEnabled(boolean state) {
+        textLibraryEditor.setEnabled(state);
+        btnReloadLibrary.setEnabled(state);
+        btnSaveLibrary.setEnabled(state);
+        textSchemeEditor.setEnabled(state);
+        btnReloadScheme.setEnabled(state);
+        btnSaveScheme.setEnabled(state);        
+        textSignalsEditor.setEnabled(state);
+        btnReloadSignals.setEnabled(state);
+        btnSaveSignals.setEnabled(state);
         initResetBtn.setEnabled(state);
         stepFwdBtn.setEnabled(state);
         stepBwdBtn.setEnabled(state);
         gotoTimeBtn.setEnabled(state);
-        timeDiagramsBtn.setEnabled(state);        
-        // menus:
+        timeDiagramsBtn.setEnabled(state);
         initResetMenuItem.setEnabled(state);
         stepFwdMenuItem.setEnabled(state);
         stepBwdMenuItem.setEnabled(state);
         gotoTimeMenuItem.setEnabled(state);
+        mntmSaveModelingResults.setEnabled(state);
     }
-    
+
     /**
      * Shows the message window.
      * 
@@ -631,7 +796,7 @@ public class MainWindow {
             msgWindowType |= SWT.ICON_INFORMATION;
             addToLog(text);
         }
-        MessageBox box = new MessageBox(Display.getDefault().getShells()[0], msgWindowType | SWT.OK);
+        MessageBox box = new MessageBox(shell, msgWindowType | SWT.OK);
         box.setMessage(text);
         box.open();
     }
@@ -771,6 +936,7 @@ public class MainWindow {
             displayer = new ModelingResultsDisplayer(engine);
             
         } catch (ModelingException e) {
+            MainWindow.showMessage(e.getMessage(), "Error");
             status(Messages.ERROR_WHILE_LAUNCHING_MODELING);
             e.printStackTrace();
         }
@@ -778,7 +944,7 @@ public class MainWindow {
             engine.run();
             if(engine.correct) {
                 index = 0;
-                setModelingButtonsAndMenuEnabled(true);
+                setControlsAndMenusEnabled(true);
                 nodes = engine.getEvents().keySet().toArray(new Long[0]);
                 modelingTimeText.setText(nodes[0] + "ns");
                 status("Modeling was succesful, timerange is " + nodes[0] + "..." + nodes[nodes.length - 1]);
@@ -796,6 +962,9 @@ public class MainWindow {
         modelingTimeText.setText(nodes[index] + "ns");
         status("Step forward to node #" + index + " at " + nodes[index] + "ns");
         displayer.updateUITables();
+        if(tableEvents.getItemCount() == 0){
+            showMessage("Modeling completed. See modeling log for more results. ", "Information");
+        }
     }
 
     private void stepBackward() {
@@ -822,38 +991,136 @@ public class MainWindow {
         }
     }
         
-    public static void updateExpandBarElements(Collection <Element> libraryElements) {
+    public static void updateExpandBarElements(Collection<Element> libraryElements, Scheme scheme) {
         for (ExpandItem item : bar.getItems()) {
             item.dispose();
         }
         for (Element element : libraryElements) {
             String elementName = element.getName();
+            String number = getSuchElementsCount(scheme.getElements(), elementName);            
             String elementDescription = element.getDescr();
             String delay = String.valueOf(element.getDelay());
-            addElementToExpandBar(elementName, elementDescription, delay);
+            String inputsCount = String.valueOf(element.getIcnt());
+            String outputsCount = String.valueOf(element.getOcnt());            
+            String elementOfSuchType = getNamesOfElements (scheme.getElements(), elementName);
+            
+            Composite composite = new Composite(bar, SWT.NONE);
+            composite.setLayout(new GridLayout(1, false));
+            Text textField = new Text(composite, SWT.WRAP | SWT.CENTER | SWT.MULTI);
+            textField.setEditable(false);
+            textField.setLayoutData(new GridData(SWT.FILL, SWT.FILL, true, true, 1, 1));
+            textField.setText(elementDescription + "; \ndelay = " + delay + "\n inputs count = " + inputsCount
+                    + ";\n outputs count = " + outputsCount + "\n"+ elementOfSuchType);
+            ExpandItem item = new ExpandItem(bar, SWT.NONE, 0);
+            item.setExpanded(false);
+            item.setText(elementName + " [" + number + "] ");
+            item.setControl(composite);
+            composite.pack();
+            composite.pack(true);
+            item.setHeight(textField.computeSize(SWT.DEFAULT, SWT.DEFAULT).y + 30);
+        }
+        for (ExpandItem item : bar.getItems()) {
+            item.setExpanded(true);
+        }
+        bar.redraw();
+    }
+
+    private static String getNamesOfElements(Map<String, String> elements, String elementName) {
+        int count = 0;
+        String result = "";
+        for (String name : elements.values()) {
+            if (name.equals(elementName)) {
+                result += elements.keySet().toArray(new String[] {})[count] + ", ";
+            }
+            count++;
+        }
+        if(result.length() == 0){
+            return "Scheme doesn`t contain elements of this type.";
+        }
+        return "Elements: [" + result.substring(0, result.length() - 2) + "]";
+    }
+    
+    public static void updateExpandBarElements(Collection<Element> libraryElements) {
+        for (ExpandItem item : bar.getItems()) {
+            item.dispose();
+        }
+        for (Element element : libraryElements) {
+            String elementName = element.getName();         
+            String elementDescription = element.getDescr();
+            String delay = String.valueOf(element.getDelay());
+            String inputsCount = String.valueOf(element.getIcnt());
+            String outputsCount = String.valueOf(element.getOcnt());            
+            Composite composite = new Composite(bar, SWT.NONE);
+            composite.setLayout(new GridLayout(1, false));
+            Text textField = new Text(composite, SWT.WRAP | SWT.CENTER | SWT.MULTI);
+            textField.setEditable(false);
+            textField.setLayoutData(new GridData(SWT.FILL, SWT.FILL, true, true, 1, 1));
+            textField.setText(elementDescription + "; \ndelay = " + delay + "\n inputs count = " + inputsCount
+                    + ";\n outputs count = " + outputsCount);
+            ExpandItem item = new ExpandItem(bar, SWT.NONE, 0);
+            item.setExpanded(false);
+            item.setText(elementName);
+            item.setControl(composite);
+            composite.pack();
+            composite.pack(true);
+            item.setHeight(textField.computeSize(SWT.DEFAULT, SWT.DEFAULT).y + 10);
+        }        
+        for (ExpandItem item : bar.getItems()) {
+            item.setExpanded(true);
+        }
+        bar.redraw();
+    }
+    
+    private static String getSuchElementsCount(Map<String, String> elements, String elementName) {
+        int result = 0;
+        for (String elementDesc : elements.values()) {
+            if (elementDesc.equals(elementName)) {
+                result++;
+            }
+        }
+        return result + "";
+    }
+    
+    public static void readFileToTextField(Text textField, File file) {
+        textField.setText("");
+        try {
+            br = new BufferedReader(new FileReader(file));
+            String line;
+            while((line = br.readLine()) != null){
+                textField.append("\n" + line);
+            }
+        } catch (IOException e) {
+            showMessage("Can`t read file " + file.getAbsolutePath(), "Error");
+            e.printStackTrace();
+        } finally {
+            if (br != null) {
+                try {
+                    br.close();
+                } catch (IOException e) {
+                    e.printStackTrace();
+                }
+            }
         }
     }
 
-    private static String getNumberOfSuchElementsInThisScheme(String elementName) {
-        int count = 0;
-        engine.getScheme().getElements();        
-        return null;
+    public static void saveFileFromTextField(Text textField, File file) {
+        try {
+            bw = new BufferedWriter(new FileWriter(file));
+            bw.write(textField.getText());
+        } catch (IOException e) {
+            showMessage("Can`t write file " + file.getAbsolutePath(), "Error");
+            e.printStackTrace();
+        } finally {
+            if (bw != null) {
+                try {
+                    bw.close();
+                } catch (IOException e) {
+                    e.printStackTrace();
+                }
+            }
+        }
     }
-
-    public static void addElementToExpandBar(String elementName, String elementDescription, String delay) {
-        Composite composite = new Composite(bar, SWT.NONE);
-        composite.setLayout(new GridLayout(1, false));
-        Text textField = new Text(composite, SWT.WRAP | SWT.CENTER | SWT.MULTI);
-        textField.setEditable(false);
-        textField.setLayoutData(new GridData(SWT.FILL, SWT.FILL, true, true, 1, 1));
-        textField.setText(elementDescription);
-        ExpandItem item = new ExpandItem(bar, SWT.NONE, 0);
-        item.setExpanded(true);
-        item.setText(elementName);
-        item.setHeight(composite.computeSize(SWT.DEFAULT, SWT.DEFAULT).y);
-        item.setControl(composite);
-    }
-
+    
     public static Long getCurrentNode() {
         return nodes[index];
     }

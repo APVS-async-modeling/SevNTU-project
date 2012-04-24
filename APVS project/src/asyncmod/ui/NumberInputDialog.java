@@ -23,6 +23,7 @@ private Shell shell;
    */
   public NumberInputDialog(Shell parent) {
     super(parent);
+    this.shell = parent;
   }
 
   /**

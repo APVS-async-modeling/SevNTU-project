@@ -46,7 +46,6 @@ public class ModelingEngine implements Runnable {
         }
         try {
             this.library = (Library) yaml.load(stream);
-            MainWindow.updateExpandBarElements(this.library.getLibrary().values());
         } catch(Exception e) {
             throw new ModelingException(0x10);
         }
@@ -57,7 +56,9 @@ public class ModelingEngine implements Runnable {
             throw new ModelingException(0x01, scheme);
         }
         try {
-            this.scheme = (Scheme) yaml.load(stream);            
+            this.scheme = (Scheme) yaml.load(stream);
+            this.scheme.getElements();
+            
         } catch(Exception e) {
             throw new ModelingException(0x11);
         }
@@ -72,6 +73,8 @@ public class ModelingEngine implements Runnable {
         } catch(Exception e) {
             throw new ModelingException(0x12);
         }
+        
+        MainWindow.updateExpandBarElements(this.library.getLibrary().values(), this.scheme);
     }
     
     public void run() {

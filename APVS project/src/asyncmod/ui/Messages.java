@@ -19,6 +19,8 @@ public final class Messages {
     // errors
     public static final String ERROR_WHILE_LAUNCHING_MODELING = "Error while launching modeling.";
     public static final String ERROR_WHILE_MODELING_SCHEME = "Error while modeling scheme.";
+    public static final String ERROR_FILE_NOT_FOUND = "File not found: ";
+    public static final String ERROR_WRONG_LIBRARY_DOCUMENT = "Неверный документ библиотеки.";
     
     // additional
     public static final String LINE_DELIMITER_SYMBOL = "-";

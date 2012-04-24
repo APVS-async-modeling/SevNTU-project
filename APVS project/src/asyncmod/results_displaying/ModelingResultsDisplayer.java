@@ -50,7 +50,7 @@ public class ModelingResultsDisplayer {
             }
 
         } else {
-            table = new String[][]{{"<none>", ""}};
+            table = new String[][]{{"<none>"}};
         }
         MainWindow.setActiveElementsTableValues(table);
         
