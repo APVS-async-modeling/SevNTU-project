@@ -1407,8 +1407,6 @@ public class MainWindow {
             ce_element.setItems(scheme.getElements().keySet().toArray(new String[0]));
             ce_circuit.setItems(scheme.getCircuits().keySet().toArray(new String[0]));
             ce_circuit2.setItems(ce_circuit.getItems());
-            ce_input.setItems(scheme.getInputs().toArray(new String[0]));
-            ce_output.setItems(scheme.getOutputs().toArray(new String[0]));
             
             for(String elementName : scheme.getElements().keySet()) {
                 Element element = library.getLibrary().get(scheme.getElements().get(elementName));
@@ -1420,13 +1418,23 @@ public class MainWindow {
                 }
             }
             
+            for(String inputName : scheme.getInputs()) {
+                ce_input.add(inputName);
+                ce_source.add(new Contact(inputName, -1).toString());
+            }
+            
+            for(String outputName : scheme.getOutputs()) {
+                ce_output.add(outputName);
+                ce_drain.add(new Contact(outputName, -1).toString());
+            }
+            
             Yaml yaml = new Yaml();
             ce_view.setText(yaml.dump(scheme));
         }
     }
     
     public void schemeEditorAddElement() {
-        if(ce_element.getSelectionIndex() == -1 || ce_type.getSelectionIndex() == -1) return;
+        if(ce_element.getText().length() == 0 || ce_type.getSelectionIndex() == -1) return;
         String elementName = ce_element.getText();
         String elementType = ce_type.getText();
                 
@@ -1490,7 +1498,7 @@ public class MainWindow {
     }
     
     public void schemeEditorAddCircuit() {
-        if(ce_circuit.getSelectionIndex() == -1 || ce_source.getSelectionIndex() == -1) return;
+        if(ce_circuit.getText().length() == 0 || ce_source.getSelectionIndex() == -1) return;
         String circuitName = ce_circuit.getText();
         ce_circuit.add(circuitName);
         ce_circuit2.add(circuitName);
@@ -1534,11 +1542,13 @@ public class MainWindow {
     }
     
     public void schemeEditorAddInput() {
-        if(ce_input.getSelectionIndex() == -1) return;
+        if(ce_input.getText().length() == 0) return;
         String inputName = ce_input.getText();
         scheme.getInputs().add(inputName);
         ce_input.add(inputName);
-        se_signal.add(new Contact(inputName, -1).toString());
+        Contact contact = new Contact(inputName, -1);
+        ce_source.add(contact.toString());
+        se_signal.add(contact.toString());
         
         schemeEditorSchemeChanged();
     }
@@ -1546,30 +1556,54 @@ public class MainWindow {
     public void schemeEditorDelInput() {
         if(ce_input.getSelectionIndex() == -1) return;
         String inputName = ce_input.getText();
+        Contact contact = new Contact(inputName, -1);
+        
+        List<String> sourceFor = new LinkedList<String>();
+        for(String circuitName : scheme.getCircuits().keySet()) {
+            Circuit circuit = scheme.getCircuits().get(circuitName);
+            if(circuit.getContacts().contains(contact)) {
+                sourceFor.add(circuitName);
+            }
+        }
+        for(String circuitName : sourceFor) {
+            scheme.getCircuits().remove(circuitName);
+            ce_circuit.remove(circuitName);
+            ce_circuit2.remove(circuitName);
+        }
+        
         scheme.getInputs().remove(inputName);
         ce_input.remove(inputName);
-        se_signal.remove(new Contact(inputName, -1).toString());
-        
+        ce_source.remove(contact.toString());
+        se_signal.remove(contact.toString());
         schemeEditorSchemeChanged();
         signalEditorSignalsChanged();
     }
     
     public void schemeEditorAddOutput() {
-        if(ce_output.getSelectionIndex() == -1) return;
+        if(ce_output.getText().length() == 0) return;
         String outputName = ce_output.getText();
         scheme.getOutputs().add(outputName);
         ce_output.add(outputName);
-        se_signal.add(new Contact(outputName, -1).toString());
-        
+        Contact contact = new Contact(outputName, -1);
+        ce_drain.add(contact.toString());
+        se_signal.add(contact.toString());
         schemeEditorSchemeChanged();
     }
     
     public void schemeEditorDelOutput() {
         if(ce_output.getSelectionIndex() == -1) return;
         String outputName = ce_output.getText();
+        Contact contact = new Contact(outputName, -1);
+        
+        for(String circuitName : scheme.getCircuits().keySet()) {
+            Circuit circuit = scheme.getCircuits().get(circuitName);
+            circuit.getContacts().remove(contact);
+        }
+        
         scheme.getOutputs().remove(outputName);
         ce_output.remove(outputName);
-        se_signal.remove(new Contact(outputName, -1).toString());
+        ce_drain.remove(contact.toString());
+        se_signal.remove(contact.toString());
         
         schemeEditorSchemeChanged();
         signalEditorSignalsChanged();
