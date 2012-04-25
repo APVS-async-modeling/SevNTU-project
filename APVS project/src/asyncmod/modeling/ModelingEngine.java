@@ -1,6 +1,7 @@
 package asyncmod.modeling;
 
 import java.io.BufferedWriter;
+import java.io.File;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.util.Arrays;
@@ -183,6 +184,7 @@ public class ModelingEngine implements Runnable {
         }
         
         // buffered output streams for logging and result saving
+        new File(logs).getParentFile().mkdirs();
         BufferedWriter logwriter = new LogWriter(new FileWriter(logs, false));
         BufferedWriter diawriter = new BufferedWriter(new FileWriter(diagrams, false));
         

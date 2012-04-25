@@ -481,7 +481,7 @@ public class MainWindow {
                 final int coordY = getRightUpperCornerPosition().y;
                 if (timeDiagramsWindow == null) {
                     // singleton instance of TimeDiagram
-                    timeDiagramsWindow = new TimeDiagramsWindow(shell, SWT.NONE, nodes[nodes.length - 1], lastInit + "-diagrams.log");
+                    timeDiagramsWindow = new TimeDiagramsWindow(shell, SWT.NONE, nodes[nodes.length - 1], "results\\" + lastInit + "-diagrams.log");
                     timeDiagramsWindow.open(coordX, coordY);
                 } else {
                     if (timeDiagramsWindow.isVisible()) {
@@ -1146,7 +1146,7 @@ public class MainWindow {
         // TODO Allow to check log and diagram files
         try {
             lastInit = System.currentTimeMillis();
-            engine = new ModelingEngine(library, scheme, signals, lastInit + "-diagrams.log", lastInit + "-logs.log");
+            engine = new ModelingEngine(library, scheme, signals, "results\\" + lastInit + "-diagrams.log", "results\\" + lastInit + "-logs.log");
             displayer = new ModelingResultsDisplayer(engine);
         } catch (ModelingException e) {
             MainWindow.showMessage(e.getMessage(), "Error");
