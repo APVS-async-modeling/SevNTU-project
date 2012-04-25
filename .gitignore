@@ -5,6 +5,7 @@
 # Folders #
 /APVS project/bin
 .metadata/
+results/
 target/
 Example
 

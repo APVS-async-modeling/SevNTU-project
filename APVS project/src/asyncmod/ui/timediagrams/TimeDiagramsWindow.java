@@ -51,11 +51,14 @@ public class TimeDiagramsWindow extends Dialog {
     
     private int width;
     private int height = 6000;
+    private int divide = 1;  
     
     private Canvas canvas;
     
-    Color WHITE = new Color(Display.getDefault(), 255, 255, 255);
-    Color LIGHT_GRAY = new Color(Display.getDefault(), 240, 240, 240);
+    Color WHITE = new Color(Display.getDefault(), 255, 255, 255); // белый цвет
+    Color LIGHT_GRAY = new Color(Display.getDefault(), 240, 240, 240); // цвет фона временных диаграмм
+    Color DIAGRAMS_X_COLOR = new Color(Display.getDefault(), 127, 127, 127); // цвет неопределенных состояний
+    Color DIAGRAMS_X_TEST = new Color(Display.getDefault(), 17, 127, 127); // цвет неопределенных состояний
     private Image image;
     private List<String> lines;
     private String [][] parsedLines;
@@ -132,7 +135,8 @@ public class TimeDiagramsWindow extends Dialog {
     }
 
     private void createContents(int coordX, int coordY) {
-        timeDiagramsShell = new Shell(getParent(), SWT.SHELL_TRIM | SWT.BORDER);
+        timeDiagramsShell = new Shell(getParent(), SWT.BORDER | SWT.RESIZE | SWT.TITLE);
+        timeDiagramsShell.setSize(563, 498);
         timeDiagramsShell.setMinimumSize(new Point(300, 300));
         timeDiagramsShell.setBounds(coordX, coordY, WIDTH, HEIGHT);
         timeDiagramsShell.setText("Time Diagrams Window");
@@ -318,10 +322,10 @@ public class TimeDiagramsWindow extends Dialog {
 
         gc.fillRectangle(0, 0, width, height); // залить слабо серым цветом прямоугольник
 
-        int contactTextDistance = 35; // расстояние между левым краем и подписью контакта
-        int distanceBetweenLines = 80; // расстояние между линиями
+        int contactTextDistance = 9; // расстояние между левым краем и подписью контакта
+        int distanceBetweenLines = 50; // расстояние между линиями
 
-        int cursorPosition = 25; // начальный сдвиг курсора вниз по оси Y
+        int cursorPosition = 35; // начальный сдвиг курсора вниз по оси Y
 
         for (TreeItem element : getSelectedTreeItems()) { // каждый элемент            
             TreeItem parent = element.getParentItem();
@@ -359,55 +363,128 @@ public class TimeDiagramsWindow extends Dialog {
     }
 
     private void otrisovkaOdnoiDiagrammy(GC gc, int contactTextDistance, int arrowStartYPosition, String contactLabel) {   
-        int arrowStartXPosition = contactTextDistance + 10;
+        int arrowStartXPosition = contactTextDistance + 33;
         gc.drawString(contactLabel, contactTextDistance, arrowStartYPosition); // нарисовать подпись контакта
-        strelka(gc, arrowStartXPosition + 10, arrowStartYPosition, width - 15, arrowStartYPosition, 7); // нарисовать линию со стрелочкой для текущего контакта         
-        risuemPodpisiPodLiniei(gc, contactTextDistance + 10, arrowStartYPosition);
-        if(!contactLabel.contains("=")){
+        strelka(gc, arrowStartXPosition, arrowStartYPosition, width - 15, arrowStartYPosition, 7); // нарисовать линию со стрелочкой для текущего контакта         
+        risuemPodpisiPodLiniei(gc, arrowStartXPosition, arrowStartYPosition);
+        if(!contactLabel.contains("=")) {
             contactLabel+="=-1";
         }
         drawDigramData(gc, arrowStartXPosition, arrowStartYPosition, contactLabel); // нарисовать сами 0, 1 , Х на диаграмме        
     }
 
-    private void drawDigramData(GC gc, int arrowStartXPsition, int arrowStartYPosition, String contactLabel) {
-        String modelingTime = MainWindow.getCurrentNode() + "";        
-        gc.drawString(modelingTime, arrowStartXPsition, arrowStartYPosition - 17); // test        
-        
-        List<Point> points = new LinkedList<Point>();
-               
-        int diagramsHeight = 9;
+    private void drawDigramData(GC gc, int arrowStartXPosition, int arrowStartYPosition, String contactLabel) {
+        String modelingTime = MainWindow.getCurrentNode() + "";    
 
+        List<Integer> points = new ArrayList<Integer>();
+
+        int lowLevelHeight = 4; // 0
+        int highLevelHeight = 18; // 1
+        int xHeight = 16; // X
+        
         int rowIndex = getRowIndex(contactLabel);
+                
+        // first point
+        points.add(arrowStartXPosition); // X
+        points.add(arrowStartYPosition - lowLevelHeight); // Y
+
+        int previous = 0;
+        int previousDisplacement = -1;
         
-        int displacement = 10;
-        
-//        for(int j=0; j<getLastColumnIndex(modelingTime); j++) {
-//            int data = Integer.parseInt(parsedLines[rowIndex][j+1]);
-//            switch(data) {
-//            case 0:
-//                points.add(new Point(x, y));
-//                break;
-//            case 1:
-//                break;
-//            case 2:
-//                break;
-//            }
-//            
-//        }
-        
+        for(int j=0; j<getLastColumnIndex(modelingTime); j++) {
+            int data = Integer.parseInt(parsedLines[rowIndex][j+1]);
+            int displacement = Integer.parseInt(parsedLines[0][j+1]);
+            switch(data) {
+            case 0:
+                if(previous == 1){ // из 1 в 0
+                    // 1
+                    points.add(arrowStartXPosition + displacement); // X
+                    points.add(arrowStartYPosition - highLevelHeight); // Y
+                    // 0
+                    points.add(arrowStartXPosition + displacement); // X
+                    points.add(arrowStartYPosition - lowLevelHeight); // Y
+                } else if(previous == 0){ // из 0 в 0
+                    // 0
+                    points.add(arrowStartXPosition + displacement); // X
+                    points.add(arrowStartYPosition - lowLevelHeight); // Y
+                } else { // из X в 0
+                    gc.setBackground(DIAGRAMS_X_TEST);
+                    int x = arrowStartXPosition + previousDisplacement;
+                    int y = arrowStartYPosition - 1 - xHeight;
+                    int h = xHeight;
+                    int w = displacement - previousDisplacement;
+                    gc.fillRectangle(new Rectangle(x, y, w, h));
+                    gc.setBackground(LIGHT_GRAY);
+                }
+                previous = 0;
+                break;
+            case 1:
+                if(previous == 0) { // из 0 в 1
+                    //0
+                    points.add(arrowStartXPosition + displacement); // X           
+                    points.add(arrowStartYPosition - lowLevelHeight); // Y
+                    //1
+                    points.add(arrowStartXPosition + displacement); // X
+                    points.add(arrowStartYPosition - highLevelHeight); // Y
+                } else if(previous == 1){ // из 1 в 1
+                    //1
+                    points.add(arrowStartXPosition + displacement); // X           
+                    points.add(arrowStartYPosition - highLevelHeight); // Y
+                } else { // из Х в 1
+                    // 0
+                    points.add(arrowStartXPosition + displacement); // X           
+                    points.add(arrowStartYPosition - lowLevelHeight); // Y
+                    // 1
+                    points.add(arrowStartXPosition + displacement); // X
+                    points.add(arrowStartYPosition - highLevelHeight); // Y
+                    // X
+                    gc.setBackground(DIAGRAMS_X_TEST);
+                    int x = arrowStartXPosition + previousDisplacement;
+                    int y = arrowStartYPosition - 1 - xHeight;
+                    int h = xHeight;
+                    int w = displacement - previousDisplacement;
+                    gc.fillRectangle(new Rectangle(x, y, w, h));
+                    gc.setBackground(LIGHT_GRAY);
+                }
+                previous = 1;
+                break;
+            case 2: 
+                if(previousDisplacement != -1) {
+                    // X
+                    gc.setBackground(DIAGRAMS_X_COLOR);
+                    int x = arrowStartXPosition + previousDisplacement;
+                    int y = arrowStartYPosition - 1 - xHeight;
+                    int h = xHeight;
+                    int w = displacement - previousDisplacement;
+                    gc.fillRectangle(new Rectangle(x, y, w, h));
+                    gc.setBackground(LIGHT_GRAY);
+                    previous = 2;                    
+                }
+                previousDisplacement = displacement;
+                break;
+            }
+        }
+
+        Integer[] temp = points.toArray(new Integer[] {});
+        int[] pointsToDraw = new int[temp.length];
+        for (int i = 0; i < temp.length; i++) {
+            pointsToDraw[i] = temp[i];
+        }
+        gc.drawPolyline(pointsToDraw);
+
     }
 
     private int getLastColumnIndex(String modelingTime) {
         int result = 0;
         for (int j = 0; j < parsedLines[0].length; j++) {
-            if(modelingTime.equals(parsedLines[0][j])){
+            if (modelingTime.equals(parsedLines[0][j])) {
                 result = j;
                 break;
             }
         }
         return result;
     }
-    
+
     private int getRowIndex(String contactLabel) {
         int result = 0;
         for (int i = 0; i < parsedLines.length; i++) {
@@ -421,11 +498,11 @@ public class TimeDiagramsWindow extends Dialog {
     
     private void risuemPodpisiPodLiniei(GC gc, int x, int y) {     
         double step = (int) Math.sqrt(LastModelingTime + 0.0);
-        for (double i = x; i < LastModelingTime; i += step) {
+        for (double i = 0; i <= LastModelingTime; i += step) {                       
             int currentPosition = (int)i; // координата х
-            сhertocka(gc, currentPosition, y, 4);
-            String curPosition = currentPosition + "";            
-            gc.drawString(curPosition, currentPosition - (curPosition.length() * 5 / 2), y + 13);
+            сhertocka(gc, currentPosition + x, y, 2);
+            String curPosition = currentPosition + "";
+            gc.drawString(curPosition, currentPosition + x - (curPosition.length() * 5 / 2), y + 13);
         }
     }
 

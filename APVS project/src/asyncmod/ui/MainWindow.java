@@ -64,6 +64,7 @@ import asyncmod.modeling.Signal;
 import asyncmod.modeling.SignalBundle;
 import asyncmod.results_displaying.ModelingResultsDisplayer;
 import asyncmod.ui.timediagrams.TimeDiagramsWindow;
+import org.eclipse.wb.swt.SWTResourceManager;
 
 public class MainWindow {
 
@@ -239,7 +240,7 @@ public class MainWindow {
     protected final void createContents() {
         shell = new Shell();
         shell.setMinimumSize(new Point(500, 390));
-        shell.setSize(790, 550);
+        shell.setSize(826, 550);
         shell.setText("APVS async modeling project");
         shell.setLayout(new FillLayout(SWT.HORIZONTAL));
 
@@ -255,11 +256,11 @@ public class MainWindow {
             }
 
             private void updateTimeDiagramsWindowPosition() {
-                if (timeDiagramsWindow != null) {
-                    int xCoord = getRightUpperCornerPosition().x + UIConstants.SPACE_BETWEEN_WINDOWS;
-                    int yCoord = getRightUpperCornerPosition().y;
-                    timeDiagramsWindow.setPosition(xCoord, yCoord);
-                }
+//                if (timeDiagramsWindow != null) {
+//                    int xCoord = getRightUpperCornerPosition().x + UIConstants.SPACE_BETWEEN_WINDOWS;
+//                    int yCoord = getRightUpperCornerPosition().y;
+//                    timeDiagramsWindow.setPosition(xCoord, yCoord);
+//                }
             }
         });
 
@@ -273,19 +274,23 @@ public class MainWindow {
         menuItemFile.setMenu(menu_1);
 
         MenuItem mntmOpen_1 = new MenuItem(menu_1, SWT.CASCADE);
+        mntmOpen_1.setImage(SWTResourceManager.getImage(MainWindow.class, "/icons/blue-folder--arrow.png"));
         mntmOpen_1.setText("Open");
 
         Menu menu_4 = new Menu(mntmOpen_1);
         mntmOpen_1.setMenu(menu_4);
        
         MenuItem openLibraryFileMenuItem = new MenuItem(menu_4, SWT.NONE);
+        openLibraryFileMenuItem.setImage(SWTResourceManager.getImage(MainWindow.class, "/icons/book--arrow.png"));
         openLibraryFileMenuItem.setText("Open Library file...");
 
         final MenuItem openDiscreteModelMenuItem = new MenuItem(menu_4, SWT.NONE);
+        openDiscreteModelMenuItem.setImage(SWTResourceManager.getImage(MainWindow.class, "/icons/book--arrow.png"));
         openDiscreteModelMenuItem.setEnabled(false);
         openDiscreteModelMenuItem.setText("Open Discrete Model file...");
 
         final MenuItem openSignalsFileMenuItem = new MenuItem(menu_4, SWT.NONE);
+        openSignalsFileMenuItem.setImage(SWTResourceManager.getImage(MainWindow.class, "/icons/Script.gif"));
         openSignalsFileMenuItem.setEnabled(false);
         openSignalsFileMenuItem.setText("Open Signals file...");
       
@@ -313,12 +318,14 @@ public class MainWindow {
         });    
         
         MenuItem mntmSave = new MenuItem(menu_1, SWT.CASCADE);
+        mntmSave.setImage(SWTResourceManager.getImage(MainWindow.class, "/icons/Save.gif"));
         mntmSave.setText("Save");
 
         Menu menu_5 = new Menu(mntmSave);
         mntmSave.setMenu(menu_5);
 
         mntmSaveModelingResults = new MenuItem(menu_5, SWT.NONE);
+        mntmSaveModelingResults.setImage(SWTResourceManager.getImage(MainWindow.class, "/icons/application-share.png"));
         mntmSaveModelingResults.addSelectionListener(new SelectionAdapter() {
             @Override
             public void widgetSelected(SelectionEvent e) {
@@ -340,6 +347,7 @@ public class MainWindow {
         mntmSaveModelingResults.setText("Save modeling results...");
 
         MenuItem mntmClose = new MenuItem(menu_1, SWT.NONE);
+        mntmClose.setImage(SWTResourceManager.getImage(MainWindow.class, "/icons/cross-script.png"));
         mntmClose.addSelectionListener(new SelectionAdapter() {
             @Override
             public void widgetSelected(final SelectionEvent e) {
@@ -355,6 +363,7 @@ public class MainWindow {
         menuItemModeling.setMenu(menu_3);
 
         initResetMenuItem = new MenuItem(menu_3, SWT.NONE);
+        initResetMenuItem.setImage(SWTResourceManager.getImage(MainWindow.class, "/icons/Home.gif"));
         initResetMenuItem.addSelectionListener(new SelectionAdapter() {
             @Override
             public void widgetSelected(SelectionEvent e) {
@@ -364,6 +373,7 @@ public class MainWindow {
         initResetMenuItem.setText("Init/Reset");
 
         gotoTimeMenuItem = new MenuItem(menu_3, SWT.NONE);
+        gotoTimeMenuItem.setImage(SWTResourceManager.getImage(MainWindow.class, "/icons/History.gif"));
         gotoTimeMenuItem.addSelectionListener(new SelectionAdapter() {
             @Override
             public void widgetSelected(SelectionEvent e) {
@@ -373,10 +383,28 @@ public class MainWindow {
         gotoTimeMenuItem.setText("Goto time...");
 
         stepFwdMenuItem = new MenuItem(menu_3, SWT.NONE);
+        stepFwdMenuItem.setImage(SWTResourceManager.getImage(MainWindow.class, "/icons/Forward.gif"));
         stepFwdMenuItem.setText("Step Forward");
 
         stepBwdMenuItem = new MenuItem(menu_3, SWT.NONE);
+        stepBwdMenuItem.setImage(SWTResourceManager.getImage(MainWindow.class, "/icons/Back.gif"));
         stepBwdMenuItem.setText("Step Backward");
+        
+        MenuItem mntmNewSubmenu = new MenuItem(menu, SWT.CASCADE);
+        mntmNewSubmenu.setText("View");
+        
+        Menu menu_6 = new Menu(mntmNewSubmenu);
+        mntmNewSubmenu.setMenu(menu_6);
+        
+        MenuItem mntmTimeDiagrams = new MenuItem(menu_6, SWT.NONE);
+        mntmTimeDiagrams.setImage(SWTResourceManager.getImage(MainWindow.class, "/icons/Stock graph.gif"));
+        mntmTimeDiagrams.addSelectionListener(new SelectionAdapter() {
+            @Override
+            public void widgetSelected(SelectionEvent e) {
+                toggleTimeDiagrams();
+            }
+        });
+        mntmTimeDiagrams.setText("Time Diagrams");
 
         MenuItem menuItemAbout = new MenuItem(menu, SWT.CASCADE);
         menuItemAbout.setText("About");
@@ -385,6 +413,7 @@ public class MainWindow {
         menuItemAbout.setMenu(menu_2);
 
         MenuItem mntmNewItem = new MenuItem(menu_2, SWT.NONE);
+        mntmNewItem.setImage(SWTResourceManager.getImage(MainWindow.class, "/icons/Bubble.gif"));
         mntmNewItem.setText("Program");
         mntmNewItem.addSelectionListener(new SelectionAdapter() {
             @Override
@@ -394,6 +423,7 @@ public class MainWindow {
         });
 
         MenuItem mntmTeam = new MenuItem(menu_2, SWT.NONE);
+        mntmTeam.setImage(SWTResourceManager.getImage(MainWindow.class, "/icons/About.gif"));
         mntmTeam.setText("Team");
         mntmTeam.addSelectionListener(new SelectionAdapter() {
             @Override
@@ -420,14 +450,10 @@ public class MainWindow {
         Composite ControlButtonsComposite = new Composite(mainComposite,
                 SWT.BORDER);
         ControlButtonsComposite.setLayoutData(BorderLayout.NORTH);
-        RowLayout rl_ControlButtonsComposite = new RowLayout(SWT.HORIZONTAL);
-        rl_ControlButtonsComposite.marginLeft = 10;
-        rl_ControlButtonsComposite.spacing = 10;
-        rl_ControlButtonsComposite.pack = false;
-        rl_ControlButtonsComposite.fill = true;
-        ControlButtonsComposite.setLayout(rl_ControlButtonsComposite);
+        ControlButtonsComposite.setLayout(new FillLayout(SWT.HORIZONTAL));
 
         initResetBtn = new Button(ControlButtonsComposite, SWT.NONE);
+        initResetBtn.setImage(SWTResourceManager.getImage(MainWindow.class, "/icons/Home.gif"));
         initResetBtn.addSelectionListener(new SelectionAdapter() {
             @Override
             public void widgetSelected(SelectionEvent e) {
@@ -437,6 +463,7 @@ public class MainWindow {
         initResetBtn.setText("Init/Reset");
 
         stepFwdBtn = new Button(ControlButtonsComposite, SWT.NONE);
+        stepFwdBtn.setImage(SWTResourceManager.getImage(MainWindow.class, "/icons/Forward.gif"));
         stepFwdBtn.addSelectionListener(new SelectionAdapter() {
             @Override
             public void widgetSelected(SelectionEvent e) {
@@ -446,6 +473,7 @@ public class MainWindow {
         stepFwdBtn.setText("Step Forward");
 
         stepBwdBtn = new Button(ControlButtonsComposite, SWT.NONE);
+        stepBwdBtn.setImage(SWTResourceManager.getImage(MainWindow.class, "/icons/Back.gif"));
         stepBwdBtn.addSelectionListener(new SelectionAdapter() {
             @Override
             public void widgetSelected(SelectionEvent e) {
@@ -455,15 +483,17 @@ public class MainWindow {
         stepBwdBtn.setText("Step Backward");
 
         gotoTimeBtn = new Button(ControlButtonsComposite, SWT.NONE);
+        gotoTimeBtn.setImage(SWTResourceManager.getImage(MainWindow.class, "/icons/History.gif"));
         gotoTimeBtn.addSelectionListener(new SelectionAdapter() {
             @Override
             public void widgetSelected(SelectionEvent e) {                
                 gotoTime();
             }
         });
-        gotoTimeBtn.setText("Goto time");
+        gotoTimeBtn.setText("Goto time...");
 
         timeDiagramsBtn = new Button(ControlButtonsComposite, SWT.NONE);
+        timeDiagramsBtn.setImage(SWTResourceManager.getImage(MainWindow.class, "/icons/Stock graph.gif"));
         timeDiagramsBtn.setText("Time diagrams...");
         
         Label lblModelingTime = new Label(ControlButtonsComposite, SWT.NONE);
@@ -477,19 +507,7 @@ public class MainWindow {
         timeDiagramsBtn.addSelectionListener(new SelectionAdapter() {
             @Override
             public void widgetSelected(SelectionEvent e) {
-                final int coordX = getRightUpperCornerPosition().x + UIConstants.SPACE_BETWEEN_WINDOWS;
-                final int coordY = getRightUpperCornerPosition().y;
-                if (timeDiagramsWindow == null) {
-                    // singleton instance of TimeDiagram
-                    timeDiagramsWindow = new TimeDiagramsWindow(shell, SWT.NONE, nodes[nodes.length - 1], "results\\" + lastInit + "-diagrams.log");
-                    timeDiagramsWindow.open(coordX, coordY);
-                } else {
-                    if (timeDiagramsWindow.isVisible()) {
-                        timeDiagramsWindow.hide();
-                    } else {
-                        timeDiagramsWindow.show(coordX, coordY);
-                    }
-                }
+                toggleTimeDiagrams();
             }
         });
 
@@ -851,10 +869,10 @@ public class MainWindow {
         ce_output.setBounds(10, 20, 237, 23);
         scrolledComposite_1.setContent(composite_7);
         scrolledComposite_1.setMinSize(composite_7.computeSize(SWT.DEFAULT, SWT.DEFAULT));
-        
+
         tabSignalsEditor = new TabItem(mainWindowTabFolder, SWT.NONE);
         tabSignalsEditor.setText("Signals Editor");
-        
+
         se_composite = new Composite(mainWindowTabFolder, SWT.NONE);
         tabSignalsEditor.setControl(se_composite);
         se_composite.setLayout(new BorderLayout(0, 0));
@@ -1138,6 +1156,22 @@ public class MainWindow {
             }
         } catch (IndexOutOfBoundsException e) {
             showMessage("Cannot set values to table: " + table.getToolTipText(), "Error");
+        }
+    }
+    
+    private void toggleTimeDiagrams() {
+        final int coordX = getRightUpperCornerPosition().x + UIConstants.SPACE_BETWEEN_WINDOWS;
+        final int coordY = getRightUpperCornerPosition().y;
+        if (timeDiagramsWindow == null) {
+            // singleton instance of TimeDiagram
+            timeDiagramsWindow = new TimeDiagramsWindow(shell, SWT.NONE, nodes[nodes.length - 1], "results\\" + lastInit + "-diagrams.log");
+            timeDiagramsWindow.open(coordX, coordY);
+        } else {
+            if (timeDiagramsWindow.isVisible()) {
+                timeDiagramsWindow.hide();
+            } else {
+                timeDiagramsWindow.show(coordX, coordY);
+            }
         }
     }
     
