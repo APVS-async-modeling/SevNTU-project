@@ -600,6 +600,8 @@ public class MainWindow {
             @Override
             public void widgetSelected(SelectionEvent e) {
                 loadLibrary();
+                openDiscreteModelMenuItem.setEnabled(true);
+                openSignalsFileMenuItem.setEnabled(true);
             }
         });
         btnReloadLibrary.setText("Reload Library");
@@ -1312,7 +1314,7 @@ public class MainWindow {
     }
     
     public void saveLibrary() {
-        final String libraryFilePath = dlgSignals.open();
+        final String libraryFilePath = dlgLibrary.open();
         if (libraryFilePath != null) {
             Yaml yaml = new Yaml();
             BufferedWriter stream = null;
@@ -1359,7 +1361,7 @@ public class MainWindow {
     }
     
     public void saveScheme() {
-        final String schemeFilePath = dlgSignals.open();
+        final String schemeFilePath = dlgDiscreteModel.open();
         if (schemeFilePath != null) {
             Yaml yaml = new Yaml();
             BufferedWriter stream = null;
