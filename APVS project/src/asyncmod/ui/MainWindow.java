@@ -73,8 +73,10 @@ public class MainWindow {
     protected static Shell shell;    
     protected Display display;
     // sizes
-    private static final int WIDTH = 790;
-    private static final int HEIGHT = 518;
+    @SuppressWarnings("unused")
+    private static final int WIDTH = 800;
+    @SuppressWarnings("unused")
+    private static final int HEIGHT = 600;
 
     private TimeDiagramsWindow timeDiagramsWindow;
 
@@ -139,11 +141,11 @@ public class MainWindow {
     private Button btnSaveLibrary;
     private Button btnReloadLibrary;
     private TabItem tabSchemeEditor;
-    private Button btnSaveScheme;
-    private Button btnReloadScheme;
+    private Button ce_save;
+    private Button ce_load;
     private TabItem tabSignalsEditor;
-    private Button btnSaveSignals;
-    private Button btnReloadSignals;
+    private Button se_save;
+    private Button se_load;
     
     private Composite le_composite;
     private Text le_view;
@@ -164,6 +166,19 @@ public class MainWindow {
     private Text se_view;
     private Combo ce_circuit2;
     private Combo ce_drain;
+    private Button ce_output_add;
+    private Button ce_output_del;
+    private Button ce_input_del;
+    private Button ce_input_add;
+    private Button ce_cont_add;
+    private Button ce_cont_del;
+    private Button ce_circ_add;
+    private Button ce_circ_del;
+    private Button ce_elem_add;
+    private Button ce_elem_del;
+    private Button se_add;
+    private Button se_del;
+    private long lastInit;
        
     /**
      * Launch the application.
@@ -466,7 +481,7 @@ public class MainWindow {
                 final int coordY = getRightUpperCornerPosition().y;
                 if (timeDiagramsWindow == null) {
                     // singleton instance of TimeDiagram
-                    timeDiagramsWindow = new TimeDiagramsWindow(shell, SWT.NONE, nodes[nodes.length - 1], "test-diagrams.log");
+                    timeDiagramsWindow = new TimeDiagramsWindow(shell, SWT.NONE, nodes[nodes.length - 1], lastInit + "-diagrams.log");
                     timeDiagramsWindow.open(coordX, coordY);
                 } else {
                     if (timeDiagramsWindow.isVisible()) {
@@ -617,23 +632,23 @@ public class MainWindow {
         composite_2.setLayoutData(BorderLayout.NORTH);
         composite_2.setLayout(new GridLayout(2, false));
         
-        btnSaveScheme = new Button(composite_2, SWT.NONE);
-        btnSaveScheme.addSelectionListener(new SelectionAdapter() {
+        ce_save = new Button(composite_2, SWT.NONE);
+        ce_save.addSelectionListener(new SelectionAdapter() {
             @Override
             public void widgetSelected(SelectionEvent e) {
                 saveScheme();
             }
         });
-        btnSaveScheme.setText("Save Scheme");
+        ce_save.setText("Save Scheme");
         
-        btnReloadScheme = new Button(composite_2, SWT.NONE);
-        btnReloadScheme.addSelectionListener(new SelectionAdapter() {
+        ce_load = new Button(composite_2, SWT.NONE);
+        ce_load.addSelectionListener(new SelectionAdapter() {
             @Override
             public void widgetSelected(SelectionEvent e) {
                 loadScheme();
             }
         });
-        btnReloadScheme.setText("Reload Scheme");
+        ce_load.setText("Reload Scheme");
         
         Composite composite_6 = new Composite(ce_composite, SWT.NONE);
         composite_6.setLayoutData(BorderLayout.CENTER);
@@ -649,37 +664,37 @@ public class MainWindow {
         
         Composite composite_7 = new Composite(scrolledComposite_1, SWT.NONE);
         
-        Group grpAddElements = new Group(composite_7, SWT.NONE);
-        grpAddElements.setText("Add elements");
-        grpAddElements.setBounds(0, 0, 250, 104);
+        Group ce_elem_grp = new Group(composite_7, SWT.NONE);
+        ce_elem_grp.setText("Add elements");
+        ce_elem_grp.setBounds(0, 0, 250, 104);
         
-        ce_type = new Combo(grpAddElements, SWT.READ_ONLY);
+        ce_type = new Combo(ce_elem_grp, SWT.READ_ONLY);
         ce_type.setToolTipText("Specify element name");
         ce_type.setBounds(10, 47, 237, 23);
         
-        Button btnNewButton = new Button(grpAddElements, SWT.NONE);
-        btnNewButton.addSelectionListener(new SelectionAdapter() {
+        ce_elem_add = new Button(ce_elem_grp, SWT.NONE);
+        ce_elem_add.addSelectionListener(new SelectionAdapter() {
             @Override
             public void widgetSelected(SelectionEvent e) {
                 schemeEditorAddElement();
             }
         });
-        btnNewButton.setToolTipText("Adds new element of selected type with a specified name or changes type of existing element");
-        btnNewButton.setBounds(10, 76, 75, 25);
-        btnNewButton.setText("Add");
+        ce_elem_add.setToolTipText("Adds new element of selected type with a specified name or changes type of existing element");
+        ce_elem_add.setBounds(10, 76, 75, 25);
+        ce_elem_add.setText("Add");
         
-        Button btnNewButton_1 = new Button(grpAddElements, SWT.NONE);
-        btnNewButton_1.addSelectionListener(new SelectionAdapter() {
+        ce_elem_del = new Button(ce_elem_grp, SWT.NONE);
+        ce_elem_del.addSelectionListener(new SelectionAdapter() {
             @Override
             public void widgetSelected(SelectionEvent e) {
                 schemeEditorDelElement();
             }
         });
-        btnNewButton_1.setToolTipText("Deletes element with specified name");
-        btnNewButton_1.setBounds(91, 76, 75, 25);
-        btnNewButton_1.setText("Delete");
+        ce_elem_del.setToolTipText("Deletes element with specified name");
+        ce_elem_del.setBounds(91, 76, 75, 25);
+        ce_elem_del.setText("Delete");
         
-        ce_element = new Combo(grpAddElements, SWT.NONE);
+        ce_element = new Combo(ce_elem_grp, SWT.NONE);
         ce_element.addSelectionListener(new SelectionAdapter() {
             @Override
             public void widgetSelected(SelectionEvent e) {
@@ -696,100 +711,100 @@ public class MainWindow {
         });
         ce_element.setBounds(10, 18, 237, 23);
         
-        Group grpAddCircuit = new Group(composite_7, SWT.NONE);
-        grpAddCircuit.setText("Add circuit");
-        grpAddCircuit.setBounds(0, 110, 250, 104);
+        Group ce_circ_grp = new Group(composite_7, SWT.NONE);
+        ce_circ_grp.setText("Add circuit");
+        ce_circ_grp.setBounds(0, 110, 250, 104);
         
-        Button button = new Button(grpAddCircuit, SWT.NONE);
-        button.addSelectionListener(new SelectionAdapter() {
+        ce_circ_add = new Button(ce_circ_grp, SWT.NONE);
+        ce_circ_add.addSelectionListener(new SelectionAdapter() {
             @Override
             public void widgetSelected(SelectionEvent e) {
                 schemeEditorAddCircuit();
             }
         });
-        button.setToolTipText("Adds new circuit with a specified name or replaces existing circuit");
-        button.setText("Add");
-        button.setBounds(10, 76, 75, 25);
+        ce_circ_add.setToolTipText("Adds new circuit with a specified name or replaces existing circuit");
+        ce_circ_add.setText("Add");
+        ce_circ_add.setBounds(10, 76, 75, 25);
         
-        Button button_1 = new Button(grpAddCircuit, SWT.NONE);
-        button_1.addSelectionListener(new SelectionAdapter() {
+        ce_circ_del = new Button(ce_circ_grp, SWT.NONE);
+        ce_circ_del.addSelectionListener(new SelectionAdapter() {
             @Override
             public void widgetSelected(SelectionEvent e) {
                 schemeEditorDelCircuit();
             }
         });
-        button_1.setToolTipText("Deletes circuit with specified name");
-        button_1.setText("Delete");
-        button_1.setBounds(91, 76, 75, 25);
+        ce_circ_del.setToolTipText("Deletes circuit with specified name");
+        ce_circ_del.setText("Delete");
+        ce_circ_del.setBounds(91, 76, 75, 25);
         
-        ce_source = new Combo(grpAddCircuit, SWT.READ_ONLY);
+        ce_source = new Combo(ce_circ_grp, SWT.READ_ONLY);
         ce_source.setToolTipText("Specify source contact name");
         ce_source.setBounds(10, 47, 237, 23);
         
-        ce_circuit = new Combo(grpAddCircuit, SWT.NONE);
+        ce_circuit = new Combo(ce_circ_grp, SWT.NONE);
         ce_circuit.setBounds(10, 18, 237, 23);
         
-        Group grpAddContact = new Group(composite_7, SWT.NONE);
-        grpAddContact.setText("Add contact");
-        grpAddContact.setBounds(0, 220, 250, 104);
+        Group ce_cont_grp = new Group(composite_7, SWT.NONE);
+        ce_cont_grp.setText("Add contact");
+        ce_cont_grp.setBounds(0, 220, 250, 104);
         
-        Button button_3 = new Button(grpAddContact, SWT.NONE);
-        button_3.addSelectionListener(new SelectionAdapter() {
+        ce_cont_add = new Button(ce_cont_grp, SWT.NONE);
+        ce_cont_add.addSelectionListener(new SelectionAdapter() {
             @Override
             public void widgetSelected(SelectionEvent e) {
                 schemeEditorAddContact();
             }
         });
-        button_3.setToolTipText("Adds new contact to selected circuit");
-        button_3.setText("Add");
-        button_3.setBounds(10, 76, 75, 25);
+        ce_cont_add.setToolTipText("Adds new contact to selected circuit");
+        ce_cont_add.setText("Add");
+        ce_cont_add.setBounds(10, 76, 75, 25);
         
-        Button button_4 = new Button(grpAddContact, SWT.NONE);
-        button_4.addSelectionListener(new SelectionAdapter() {
+        ce_cont_del = new Button(ce_cont_grp, SWT.NONE);
+        ce_cont_del.addSelectionListener(new SelectionAdapter() {
             @Override
             public void widgetSelected(SelectionEvent e) {
                 schemeEditorDelContact();
             }
         });
-        button_4.setToolTipText("Deletes specified contact from specified circuit");
-        button_4.setText("Delete");
-        button_4.setBounds(91, 76, 75, 25);
+        ce_cont_del.setToolTipText("Deletes specified contact from specified circuit");
+        ce_cont_del.setText("Delete");
+        ce_cont_del.setBounds(91, 76, 75, 25);
         
-        ce_drain = new Combo(grpAddContact, SWT.READ_ONLY);
+        ce_drain = new Combo(ce_cont_grp, SWT.READ_ONLY);
         ce_drain.setToolTipText("Specify destination contact name");
         ce_drain.setBounds(10, 47, 237, 23);
         
-        ce_circuit2 = new Combo(grpAddContact, SWT.READ_ONLY);
+        ce_circuit2 = new Combo(ce_cont_grp, SWT.READ_ONLY);
         ce_circuit2.setToolTipText("Specify circuit name");
         ce_circuit2.setBounds(10, 18, 237, 23);
         
-        Group grpAddInput = new Group(composite_7, SWT.NONE);
-        grpAddInput.setBounds(0, 330, 250, 77);
-        grpAddInput.setText("Add input");
+        Group ce_input_grp = new Group(composite_7, SWT.NONE);
+        ce_input_grp.setBounds(0, 330, 250, 77);
+        ce_input_grp.setText("Add input");
         
-        Button button_6 = new Button(grpAddInput, SWT.NONE);
-        button_6.addSelectionListener(new SelectionAdapter() {
+        ce_input_add = new Button(ce_input_grp, SWT.NONE);
+        ce_input_add.addSelectionListener(new SelectionAdapter() {
             @Override
             public void widgetSelected(SelectionEvent e) {
                 schemeEditorAddInput();
             }
         });
-        button_6.setToolTipText("Adds new input to scheme");
-        button_6.setText("Add");
-        button_6.setBounds(10, 49, 75, 25);
+        ce_input_add.setToolTipText("Adds new input to scheme");
+        ce_input_add.setText("Add");
+        ce_input_add.setBounds(10, 49, 75, 25);
         
-        Button button_7 = new Button(grpAddInput, SWT.NONE);
-        button_7.addSelectionListener(new SelectionAdapter() {
+        ce_input_del = new Button(ce_input_grp, SWT.NONE);
+        ce_input_del.addSelectionListener(new SelectionAdapter() {
             @Override
             public void widgetSelected(SelectionEvent e) {
                 schemeEditorDelInput();
             }
         });
-        button_7.setToolTipText("Deletes specified input");
-        button_7.setText("Delete");
-        button_7.setBounds(91, 49, 75, 25);
+        ce_input_del.setToolTipText("Deletes specified input");
+        ce_input_del.setText("Delete");
+        ce_input_del.setBounds(91, 49, 75, 25);
         
-        ce_input = new Combo(grpAddInput, SWT.NONE);
+        ce_input = new Combo(ce_input_grp, SWT.NONE);
         ce_input.addVerifyListener(new VerifyListener() {
             public void verifyText(VerifyEvent evt) {
                 if((ce_input.getText() + evt.text).matches("[A-Za-z][A-Za-z0-9_]*")) evt.doit = true;
@@ -799,33 +814,33 @@ public class MainWindow {
         ce_input.setToolTipText("Specify input name");
         ce_input.setBounds(10, 20, 237, 23);
         
-        Group grpAddOutput = new Group(composite_7, SWT.NONE);
-        grpAddOutput.setBounds(0, 413, 250, 77);
-        grpAddOutput.setText("Add output");
+        Group ce_output_grp = new Group(composite_7, SWT.NONE);
+        ce_output_grp.setBounds(0, 413, 250, 77);
+        ce_output_grp.setText("Add output");
         
-        Button button_9 = new Button(grpAddOutput, SWT.NONE);
-        button_9.addSelectionListener(new SelectionAdapter() {
+        ce_output_add = new Button(ce_output_grp, SWT.NONE);
+        ce_output_add.addSelectionListener(new SelectionAdapter() {
             @Override
             public void widgetSelected(SelectionEvent e) {
                 schemeEditorAddOutput();
             }
         });
-        button_9.setToolTipText("Adds new output to scheme");
-        button_9.setText("Add");
-        button_9.setBounds(10, 49, 75, 25);
+        ce_output_add.setToolTipText("Adds new output to scheme");
+        ce_output_add.setText("Add");
+        ce_output_add.setBounds(10, 49, 75, 25);
         
-        Button button_10 = new Button(grpAddOutput, SWT.NONE);
-        button_10.addSelectionListener(new SelectionAdapter() {
+        ce_output_del = new Button(ce_output_grp, SWT.NONE);
+        ce_output_del.addSelectionListener(new SelectionAdapter() {
             @Override
             public void widgetSelected(SelectionEvent e) {
                 schemeEditorDelOutput();
             }
         });
-        button_10.setToolTipText("Deletes specified output");
-        button_10.setText("Delete");
-        button_10.setBounds(91, 49, 75, 25);
+        ce_output_del.setToolTipText("Deletes specified output");
+        ce_output_del.setText("Delete");
+        ce_output_del.setBounds(91, 49, 75, 25);
         
-        ce_output = new Combo(grpAddOutput, SWT.NONE);
+        ce_output = new Combo(ce_output_grp, SWT.NONE);
         ce_output.addVerifyListener(new VerifyListener() {
             public void verifyText(VerifyEvent evt) {
                 if((ce_output.getText() + evt.text).matches("[A-Za-z][A-Za-z0-9_]*")) evt.doit = true;
@@ -848,23 +863,23 @@ public class MainWindow {
         composite_5.setLayoutData(BorderLayout.NORTH);
         composite_5.setLayout(new GridLayout(2, false));
         
-        btnSaveSignals = new Button(composite_5, SWT.NONE);
-        btnSaveSignals.addSelectionListener(new SelectionAdapter() {
+        se_save = new Button(composite_5, SWT.NONE);
+        se_save.addSelectionListener(new SelectionAdapter() {
             @Override
             public void widgetSelected(SelectionEvent e) {
                 saveSignals();
             }
         });
-        btnSaveSignals.setText("Save Signals");
+        se_save.setText("Save Signals");
         
-        btnReloadSignals = new Button(composite_5, SWT.NONE);
-        btnReloadSignals.addSelectionListener(new SelectionAdapter() {
+        se_load = new Button(composite_5, SWT.NONE);
+        se_load.addSelectionListener(new SelectionAdapter() {
             @Override
             public void widgetSelected(SelectionEvent e) {
                 loadSignals();
             }
         });
-        btnReloadSignals.setText("Reload Signals");
+        se_load.setText("Reload Signals");
         
         Composite composite_8 = new Composite(se_composite, SWT.NONE);
         composite_8.setLayoutData(BorderLayout.CENTER);
@@ -884,7 +899,7 @@ public class MainWindow {
         });
         se_signal.setBounds(10, 10, 237, 23);
         
-        Button se_add = new Button(composite_8, SWT.NONE);
+        se_add = new Button(composite_8, SWT.NONE);
         se_add.addSelectionListener(new SelectionAdapter() {
             @Override
             public void widgetSelected(SelectionEvent e) {
@@ -894,7 +909,7 @@ public class MainWindow {
         se_add.setBounds(10, 351, 75, 25);
         se_add.setText("Add signal");
         
-        Button se_del = new Button(composite_8, SWT.NONE);
+        se_del = new Button(composite_8, SWT.NONE);
         se_del.addSelectionListener(new SelectionAdapter() {
             @Override
             public void widgetSelected(SelectionEvent e) {
@@ -960,7 +975,9 @@ public class MainWindow {
         fullLogText = new Text(fullLogComposite, SWT.BORDER | SWT.READ_ONLY | SWT.WRAP | SWT.V_SCROLL | SWT.MULTI);
         fullLogText.setEditable(false);
               
-        setControlsAndMenusEnabled(false);        
+        setControlsAndMenusEnabled(false);
+        schemeEditorSetEnabled(false);
+        signalEditorSetEnabled(false);
     }
 
     private final Point getRightUpperCornerPosition() {
@@ -975,10 +992,9 @@ public class MainWindow {
         btnReloadLibrary.setEnabled(true);
         btnSaveLibrary.setEnabled(true);
         ce_view.setEnabled(true);
-        btnReloadScheme.setEnabled(true);
-        btnSaveScheme.setEnabled(true);        
-        btnReloadSignals.setEnabled(true);
-        btnSaveSignals.setEnabled(true);
+        ce_load.setEnabled(true);
+        ce_save.setEnabled(true);        
+        se_load.setEnabled(true);
         initResetBtn.setEnabled(state);
         stepFwdBtn.setEnabled(state);
         stepBwdBtn.setEnabled(state);
@@ -1129,8 +1145,8 @@ public class MainWindow {
         // Creating the Modeling Core object and launching it
         // TODO Allow to check log and diagram files
         try {
-            long time = System.currentTimeMillis();
-            engine = new ModelingEngine(library, scheme, signals, time + "-diagrams.log", time + "-logs.log");
+            lastInit = System.currentTimeMillis();
+            engine = new ModelingEngine(library, scheme, signals, lastInit + "-diagrams.log", lastInit + "-logs.log");
             displayer = new ModelingResultsDisplayer(engine);
         } catch (ModelingException e) {
             MainWindow.showMessage(e.getMessage(), "Error");
@@ -1162,15 +1178,15 @@ public class MainWindow {
         if(tableEvents.getItemCount() == 0){
             showMessage("Modeling completed. See modeling log for more results. ", "Information");
         }
-        timeDiagramsWindow.redrawTimeDiagrams(true);
+        if(timeDiagramsWindow != null) timeDiagramsWindow.redrawTimeDiagrams(true);
     }
 
     private void stepBackward() {
         index = Math.max(index - 1, 0);
         modelingTimeText.setText(nodes[index] + "ns");
         status("Step backward to node #" + index + " at " + nodes[index] + "ns");
-        timeDiagramsWindow.redrawTimeDiagrams(true);
         displayer.updateUITables();
+        if(timeDiagramsWindow != null) timeDiagramsWindow.redrawTimeDiagrams(true);
     }
     
     private void gotoTime() {
@@ -1188,7 +1204,7 @@ public class MainWindow {
         } else {
             status(Messages.MODELING_TIME_DOESNT_CHANGED);
         }
-        timeDiagramsWindow.redrawTimeDiagrams(true);
+        if(timeDiagramsWindow != null) timeDiagramsWindow.redrawTimeDiagrams(true);
     }
         
     public static void updateExpandBarElements(Collection<Element> libraryElements, Scheme scheme) {
@@ -1381,7 +1397,31 @@ public class MainWindow {
         }
     }
     
+    public void schemeEditorSetEnabled(boolean enabled) {
+        ce_element.setEnabled(enabled);
+        ce_type.setEnabled(enabled);
+        ce_elem_add.setEnabled(enabled);
+        ce_elem_del.setEnabled(enabled);
+        ce_circuit.setEnabled(enabled);
+        ce_source.setEnabled(enabled);
+        ce_circ_add.setEnabled(enabled);
+        ce_circ_del.setEnabled(enabled);
+        ce_circuit2.setEnabled(enabled);
+        ce_drain.setEnabled(enabled);
+        ce_cont_add.setEnabled(enabled);
+        ce_cont_del.setEnabled(enabled);
+        ce_input.setEnabled(enabled);
+        ce_input_add.setEnabled(enabled);
+        ce_input_del.setEnabled(enabled);
+        ce_output.setEnabled(enabled);
+        ce_output_add.setEnabled(enabled);
+        ce_output_del.setEnabled(enabled);
+        ce_load.setEnabled(enabled);
+        ce_save.setEnabled(enabled);
+    }
+    
     public void schemeEditorPrepare() {
+        schemeEditorSetEnabled(true);
         boolean libraryCorrect = false;
         boolean schemeCorrect = false;
         ce_element.removeAll();
@@ -1427,6 +1467,9 @@ public class MainWindow {
             
             Yaml yaml = new Yaml();
             ce_view.setText(yaml.dump(scheme));
+            initResetBtn.setEnabled(true);
+            initResetMenuItem.setEnabled(true);                    
+            
         }
     }
     
@@ -1636,8 +1679,6 @@ public class MainWindow {
             } catch(Exception ex) {
                 showMessage(Messages.ERROR_WRONG_SIGNALS_DOCUMENT + signalsFilePath, "Error");
             }
-            initResetBtn.setEnabled(true);
-            initResetMenuItem.setEnabled(true);                    
             String message = Messages.SIGNALS_FILE_SELECTED + signalsFilePath;
             status(message);
             signalEditorPrepare();
@@ -1675,7 +1716,17 @@ public class MainWindow {
         }
     }
     
+    public void signalEditorSetEnabled(boolean enabled) {
+        se_signal.setEnabled(enabled);
+        se_time.setEnabled(enabled);
+        se_state.setEnabled(enabled);
+        se_add.setEnabled(enabled);
+        se_del.setEnabled(enabled);
+        se_load.setEnabled(enabled);
+    }
+    
     public void signalEditorPrepare() {
+        signalEditorSetEnabled(true);
         boolean libraryCorrect = false;
         boolean schemeCorrect = false;
         boolean signalsCorrect = false;

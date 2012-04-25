@@ -1,11 +1,8 @@
 package asyncmod.modeling;
 
 import java.io.BufferedWriter;
-import java.io.FileInputStream;
-import java.io.FileNotFoundException;
 import java.io.FileWriter;
 import java.io.IOException;
-import java.io.InputStream;
 import java.util.Arrays;
 import java.util.LinkedList;
 import java.util.List;
@@ -13,10 +10,6 @@ import java.util.NavigableMap;
 import java.util.Set;
 import java.util.TreeMap;
 import java.util.TreeSet;
-
-import org.yaml.snakeyaml.Yaml;
-
-import asyncmod.ui.MainWindow;
 
 public class ModelingEngine implements Runnable {
     private Scheme scheme;
@@ -326,15 +319,19 @@ public class ModelingEngine implements Runnable {
         diawriter.write("\n");
         
         Contact[] contacts = results.signals.keySet().toArray(new Contact[0]);
-        Arrays.sort(contacts);
-        for(Contact contact : contacts)
-        {
-            Signal signal = results.signals.get(contact);
-            diawriter.write(contact.toString() + "");
-            for(int n = 0; n < nodes.length; n++) {
-                diawriter.write("\t" + signal.getState(nodes[n]));
+        if(contacts.length > 0) {
+            Arrays.sort(contacts);
+            for(Contact contact : contacts)
+            {
+                Signal signal = results.signals.get(contact);
+                diawriter.write(contact.toString() + "");
+                for(int n = 0; n < nodes.length; n++) {
+                    diawriter.write("\t" + signal.getState(nodes[n]));
+                }
+                diawriter.write("\n");
             }
-            diawriter.write("\n");
+        } else {
+            diawriter.write("#null=-1\t2\n");
         }
         
         logwriter.close();
