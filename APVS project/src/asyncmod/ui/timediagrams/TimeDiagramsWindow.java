@@ -6,6 +6,7 @@ import java.io.FileNotFoundException;
 import java.io.FileReader;
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.LinkedList;
 import java.util.List;
 
 import org.eclipse.swt.SWT;
@@ -50,13 +51,13 @@ public class TimeDiagramsWindow extends Dialog {
     private int LastModelingTime;
     
     private int width;
-    private int height = 10000;
+    private int height = 6000;
     
-    Image image = null;
     private Canvas canvas;
     
     Color WHITE = new Color(Display.getDefault(), 255, 255, 255);
     Color LIGHT_GRAY = new Color(Display.getDefault(), 240, 240, 240);
+    private Image image;
     
     public TimeDiagramsWindow(final Shell parent, final int style, long lastModelingTime, String pathToDiagramsLogFile) {
         super(parent, style);
@@ -150,7 +151,7 @@ public class TimeDiagramsWindow extends Dialog {
             public void controlMoved(final ControlEvent e) { }
         });
 
-        final Image image = new Image(Display.getDefault(), width, height);
+        image = new Image(Display.getDefault(), width, height);
         final Point origin = new Point(0, 0);
 
         canvas = new Canvas(sashForm, SWT.NO_BACKGROUND | SWT.V_SCROLL | SWT.H_SCROLL);
@@ -204,8 +205,8 @@ public class TimeDiagramsWindow extends Dialog {
         canvas.addListener(SWT.Paint, new Listener() {
           public void handleEvent(Event e) {
             GC gc = e.gc;
-            redrawTimeDiagrams(image);
-            gc.drawImage(image, origin.x, origin.y);
+            redrawTimeDiagrams();
+            gc.drawImage(image, origin.x, origin.y);            
           }
         });
 
@@ -286,62 +287,82 @@ public class TimeDiagramsWindow extends Dialog {
         return result;
     }
 
-    private void redrawTimeDiagrams(Image image) {
+    public void redrawTimeDiagrams(boolean redrawCanvas) {
+        redrawTimeDiagrams();
+        if(redrawCanvas) {
+            canvas.redraw();
+        }
+    }
+    
+    private void redrawTimeDiagrams() {
 
         GC gc = new GC(image);
         gc.setBackground(LIGHT_GRAY);
 
-        gc.fillRectangle(0, 0, width, height); // залить белым цветом прямоугольник
+        gc.fillRectangle(0, 0, width, height); // залить слабо серым цветом прямоугольник
 
-        int elementTextDistance = 15; // расстояние между левым краем и подписью элемента
         int contactTextDistance = 35; // расстояние между левым краем и подписью контакта
         int distanceBetweenLines = 80; // расстояние между линиями
 
         int cursorPosition = 25; // начальный сдвиг курсора вниз по оси Y
 
-        int count = 0;
+        for (TreeItem element : getSelectedTreeItems()) { // каждый элемент            
+            TreeItem parent = element.getParentItem();
+            String contactLabel;
 
-        for (TreeItem element : tree.getItems()) { // каждый элемент
-            if (element.getItemCount() == 0) {
-                count++;
-                otrisovkaOdnoiDiagrammy(gc, contactTextDistance, cursorPosition, element.getText(), lines.get(count));                
-                cursorPosition += distanceBetweenLines; // сдвинуть курсор вниз по оси Y к следующей линии
+            if (parent == null) {
+                contactLabel = element.getText();
+            } else {
+                contactLabel = parent.getText() + "=" + element.getText();
             }
-            else {          
-                String elementName = element.getText();
-                gc.drawString(elementName, elementTextDistance, cursorPosition); // рисуем имя элемента                
-                for (TreeItem contact : element.getItems()) { // каждый контакт
-                    count++;                    
-                    otrisovkaOdnoiDiagrammy(gc, contactTextDistance, cursorPosition, contact.getText(), lines.get(count));
-                    cursorPosition += distanceBetweenLines; // сдвинуть курсор вниз по оси Y к следующей линии
-                }
-            }
+            
+            otrisovkaOdnoiDiagrammy(gc, contactTextDistance, cursorPosition, contactLabel);
+            cursorPosition += distanceBetweenLines; // сдвинуть курсор вниз по оси Y к следующей линии
         }
         gc.dispose(); // обязательно сделать это в конце отрисовки!        
     }
 
-    private void otrisovkaOdnoiDiagrammy(GC gc, int contactTextDistance, int cursorPosition, String text, String inputFileLine) {
-        gc.drawString(text, contactTextDistance, cursorPosition); // нарисовать подпись контакта              
-        strelka(gc, contactTextDistance + 10, cursorPosition, width - 15, cursorPosition, 7); // нарисовать линию со стрелочкой = диаграмму для текущего контакта         
-        сhertocka(gc, contactTextDistance + 10, cursorPosition, 5); // нарисовать черточку в начале линии
-        // и так далее..
-
-        risuemPodpisiPodLiniei(gc, contactTextDistance + 10, cursorPosition);
-        
-        // пример:
-        gc.drawString(inputFileLine, contactTextDistance, cursorPosition + 35);
-        // это отображение строчки входного файла, которая соответствует текущему контакту, для которого мы выше рисовали временную диаграмму.        
-        // тебе надо использовать переменную inputFileLine, чтобы доставать из нее значение сигналов
+    private TreeItem [] getSelectedTreeItems() {
+        List <TreeItem> selectedItems = new LinkedList<TreeItem>();
+        for (TreeItem element : tree.getItems()) { // каждый элемент
+            if (element.getItemCount() == 0) {
+                if(element.getChecked()){
+                    selectedItems.add(element);
+                }
+            }
+            else {
+                for (TreeItem contact : element.getItems()) { // каждый контакт
+                    if(contact.getChecked()){
+                        selectedItems.add(contact);
+                    }
+                }
+            }
+        }
+        return selectedItems.toArray(new TreeItem[]{});
     }
 
-    private void risuemPodpisiPodLiniei(GC gc, int x, int y) {
-        System.out.println(LastModelingTime);
+    private void otrisovkaOdnoiDiagrammy(GC gc, int contactTextDistance, int arrowStartYPosition, String contactLabel) {   
+        int arrowStartXPosition = contactTextDistance + 10;
+        gc.drawString(contactLabel, contactTextDistance, arrowStartYPosition); // нарисовать подпись контакта
+        strelka(gc, arrowStartXPosition + 10, arrowStartYPosition, width - 15, arrowStartYPosition, 7); // нарисовать линию со стрелочкой для текущего контакта         
+        risuemPodpisiPodLiniei(gc, contactTextDistance + 10, arrowStartYPosition);      
+        drawDigramData(gc, arrowStartXPosition, arrowStartYPosition, contactLabel); // нарисовать сами 0, 1 , Х на диаграмме        
+    }
+
+    private void drawDigramData(GC gc, int arrowStartXPsition, int arrowStartYPosition, String contactLabel) {
+        String modelingTime = MainWindow.getCurrentNode() + "";
+        
+        gc.drawString(modelingTime, arrowStartXPsition, arrowStartYPosition - 17); // test
+        
+        
+    }
+
+    private void risuemPodpisiPodLiniei(GC gc, int x, int y) {     
         double step = (int) Math.sqrt(LastModelingTime + 0.0);
         for (double i = x; i < LastModelingTime; i += step) {
-            int currentPosition = (int)i;
+            int currentPosition = (int)i; // координата х
             сhertocka(gc, currentPosition, y, 4);
-            String curPosition = currentPosition + "";
-            
+            String curPosition = currentPosition + "";            
             gc.drawString(curPosition, currentPosition - (curPosition.length() * 5 / 2), y + 13);
         }
     }

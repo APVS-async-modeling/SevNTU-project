@@ -1,6 +1,5 @@
 package asyncmod.ui;
 
-import java.io.BufferedReader;
 import java.io.BufferedWriter;
 import java.io.File;
 import java.io.FileInputStream;
@@ -134,9 +133,8 @@ public class MainWindow {
     private final static Calendar cal = Calendar.getInstance();
     static SimpleDateFormat dateFormatter = new SimpleDateFormat("HH:mm:ss '('yyyy.MM.dd')'");
     private static ExpandBar bar;
-    private MenuItem mntmSaveModelingResults;    
-    
-    
+    private MenuItem mntmSaveModelingResults;
+        
     private TabItem tabLibraryEditor;
     private Button btnSaveLibrary;
     private Button btnReloadLibrary;
@@ -146,8 +144,6 @@ public class MainWindow {
     private TabItem tabSignalsEditor;
     private Button btnSaveSignals;
     private Button btnReloadSignals;
-    private static BufferedReader br;
-    private static BufferedWriter bw;
     
     private Composite le_composite;
     private Text le_view;
@@ -168,11 +164,7 @@ public class MainWindow {
     private Text se_view;
     private Combo ce_circuit2;
     private Combo ce_drain;
-    
-    
-    
-      
-    
+       
     /**
      * Launch the application.
      *
@@ -1168,12 +1160,14 @@ public class MainWindow {
         if(tableEvents.getItemCount() == 0){
             showMessage("Modeling completed. See modeling log for more results. ", "Information");
         }
+        timeDiagramsWindow.redrawTimeDiagrams(true);
     }
 
     private void stepBackward() {
         index = Math.max(index - 1, 0);
         modelingTimeText.setText(nodes[index] + "ns");
         status("Step backward to node #" + index + " at " + nodes[index] + "ns");
+        timeDiagramsWindow.redrawTimeDiagrams(true);
         displayer.updateUITables();
     }
     
@@ -1192,6 +1186,7 @@ public class MainWindow {
         } else {
             status(Messages.MODELING_TIME_DOESNT_CHANGED);
         }
+        timeDiagramsWindow.redrawTimeDiagrams(true);
     }
         
     public static void updateExpandBarElements(Collection<Element> libraryElements, Scheme scheme) {
