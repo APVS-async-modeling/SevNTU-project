@@ -184,6 +184,7 @@ public class MainWindow {
     private Button se_add;
     private Button se_del;
     private long lastInit;
+    private Button btnFullRun;
        
     /**
      * Launch the application.
@@ -495,6 +496,17 @@ public class MainWindow {
             }
         });
         gotoTimeBtn.setText("Goto time...");
+        
+        btnFullRun = new Button(ControlButtonsComposite, SWT.NONE);
+        btnFullRun.addSelectionListener(new SelectionAdapter() {
+            @Override
+            public void widgetSelected(SelectionEvent e) {
+                gotoTime(Long.MAX_VALUE);
+            }
+        });
+        btnFullRun.setImage(SWTResourceManager.getImage(MainWindow.class, "/icons/Play.gif"));
+        btnFullRun.setEnabled(false);
+        btnFullRun.setText("Full Run");
 
         timeDiagramsBtn = new Button(ControlButtonsComposite, SWT.NONE);
         timeDiagramsBtn.setImage(SWTResourceManager.getImage(MainWindow.class, "/icons/Stock graph.gif"));
@@ -1059,6 +1071,7 @@ public class MainWindow {
         stepBwdMenuItem.setEnabled(state);
         gotoTimeMenuItem.setEnabled(state);
         mntmSaveModelingResults.setEnabled(state);
+        btnFullRun.setEnabled(state);
     }
 
     /**
@@ -1263,6 +1276,10 @@ public class MainWindow {
         status(Messages.MODELING_TIME_CHANGING);
         NumberInputDialog dialog = new NumberInputDialog(shell);
         Long time = dialog.open();
+        gotoTime(time);
+    }
+
+    private void gotoTime(Long time) {
         if (time != null) {
             Long nearest = engine.getEvents().floorKey(time);
             if (nearest == null)
