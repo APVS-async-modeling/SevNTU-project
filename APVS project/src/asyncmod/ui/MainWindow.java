@@ -1503,10 +1503,16 @@ public class MainWindow {
         ce_circuit.add(circuitName);
         ce_circuit2.add(circuitName);
         
-        Circuit circuit = new Circuit();
-        circuit.getContacts().add(new Contact(ce_source.getText()));
-        scheme.getCircuits().put(circuitName, circuit);
-        
+        Contact contact = new Contact(ce_source.getText());
+        if(scheme.getCircuits().containsKey(circuitName)) {
+            Circuit circuit = scheme.getCircuits().get(circuitName);
+            circuit.getContacts().set(0, contact);
+            scheme.getCircuits().put(circuitName, circuit);
+        } else {
+            Circuit circuit = new Circuit();
+            circuit.getContacts().add(contact);
+            scheme.getCircuits().put(circuitName, circuit);
+        }
         schemeEditorSchemeChanged();
     }
     
