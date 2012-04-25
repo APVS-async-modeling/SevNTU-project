@@ -54,13 +54,13 @@ circuits:
     - [D1, 0]
     - [NQ, -1]
 elements:
-  D1: 3_AND_OR
-  D2: 3_AND_OR
-  D3: 2_AND_OR
-  D4: 2_AND_OR
-  D5: 2_AND_OR
-  D6: 2_AND_OR
-  D7: 2_AND_OR
-  D8: 2_AND_OR
+  D1: 3_AND_NOT
+  D2: 3_AND_NOT
+  D3: 2_AND_NOT
+  D4: 2_AND_NOT
+  D5: 2_AND_NOT
+  D6: 2_AND_NOT
+  D7: 2_AND_NOT
+  D8: 2_AND_NOT
 inputs: [J, C, K]
 outputs: [Q, NQ]

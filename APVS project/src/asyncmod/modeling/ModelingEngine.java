@@ -308,8 +308,6 @@ public class ModelingEngine implements Runnable {
                 }
             }
             logwriter.write("Modeling at time " + timecnt + " is over\n\n");
-            /*Yaml yaml = new Yaml();
-            logwriter.write(yaml.dump(results) + "\n\n");*/
             timecnt += 1;
         }
         

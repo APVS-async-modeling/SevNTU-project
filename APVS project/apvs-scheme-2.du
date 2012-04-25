@@ -30,6 +30,6 @@ circuits:
     - [OU_3, -1]
 elements:
   D1: JK_trigger
-  D2: 2_AND_OR
+  D2: 2_AND_NOT
 inputs: [IN_1, IN_3, IN_4, IN_5]
 outputs: [OU_1, OU_2, OU_3]

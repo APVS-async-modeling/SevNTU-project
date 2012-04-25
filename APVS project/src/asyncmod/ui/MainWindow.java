@@ -1322,7 +1322,8 @@ public class MainWindow {
                 signalEditorPrepare();
                 le_view.setText(yaml.dump(library));
             } catch(Exception ex) {
-                showMessage(Messages.ERROR_WRONG_LIBRARY_DOCUMENT + libraryFilePath, "Error");                        
+                showMessage(Messages.ERROR_WRONG_LIBRARY_DOCUMENT + libraryFilePath, "Error");    
+                ex.printStackTrace();
             }
         } else {
             status(Messages.LIBRARY_FILE_NOT_SELECTED);

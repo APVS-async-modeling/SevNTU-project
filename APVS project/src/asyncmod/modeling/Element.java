@@ -54,9 +54,9 @@ public class Element {
         //if(cnames == null) return false;
         
         int columns = icnt + ecnt * 2  + ocnt;
-        int rows = (int)Math.pow(Integer.bitCount(smask) + 1, icnt + ecnt);
+        //int rows = (int)Math.pow(Integer.bitCount(smask) + 1, icnt + ecnt);
         
-        if(table.length != rows) return false;
+        //if(table.length != rows) return false;
         //if(cnames.length != columns) return false;
         for(Integer[] row : table) {
             if(row.length != columns) return false;
