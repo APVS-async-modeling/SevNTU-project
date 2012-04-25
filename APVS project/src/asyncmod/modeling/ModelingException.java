@@ -12,18 +12,17 @@ public class ModelingException extends Exception {
     
     static {
         messages = new HashMap<Integer, String>();
-        messages.put(0x01, "Указанный файл не найден.");
-        messages.put(0x10, "Неверный документ библиотеки.");
-        messages.put(0x11, "Неверный документ схемы.");
-        messages.put(0x12, "Неверный документ тестов.");
-        messages.put(0x20, "Для указанного элемента не найдено определение в библиотеке элементов.");
-        messages.put(0x30, "Ошибка в цепях схемы, более одного выходного контакта элемента в цепи.");
-        messages.put(0x31, "Ошибка в цепях схемы, прямое обращение к внутренней переменной элемента.");
-        messages.put(0x32, "Ошибка в цепях схемы, обращение к несуществующему контакту.");
-        messages.put(0x33, "Ошибка в цепях схемы, цепь объединяет только входные контакты.");
-        messages.put(0x40, "Ошибка в сигналах, такого элемента не существует.");
-        messages.put(0x41, "Ошибка в сигналах, такого контакта не существует.");
-        messages.put(0x50, "Ошибка в библиотечном определении элемента.");
+        messages.put(0x11, "Empty paramether of library.");
+        messages.put(0x12, "Empty paramether of scheme.");
+        messages.put(0x13, "Empty paramether of signals.");
+        messages.put(0x20, "Error in scheme: no definition for specified element is found in library.");
+        messages.put(0x30, "Error in circuits: more than one source in circuit.");
+        messages.put(0x31, "Error in circuits: direct access to internal memory of element.");
+        messages.put(0x32, "Error in circuits: reference to non-existing contact.");
+        messages.put(0x33, "Error in circuits: circuit only contains drain contacts.");
+        messages.put(0x40, "Error in signals: no such element.");
+        messages.put(0x41, "Error is signals: no such contact.");
+        messages.put(0x50, "Error in library: wrong definition.");
     }
 
     public ModelingException(int ID, String text) {

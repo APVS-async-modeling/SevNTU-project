@@ -33,48 +33,24 @@ public class ModelingEngine implements Runnable {
     
     String diagrams, logs;
     
-    public ModelingEngine(String library, String scheme, String signals, String diagrams, String logs) throws ModelingException {
-        Yaml yaml = new Yaml();
-        InputStream stream = null;
+    public ModelingEngine(Library library, Scheme scheme, SignalBundle signals, String diagrams, String logs) throws ModelingException {
+        if(library == null) {
+            throw new ModelingException(0x11);
+        } else {
+            this.library = library;
+        }
+        if(scheme == null) {
+            throw new ModelingException(0x12);
+        } else {
+            this.scheme = scheme;
+        }
+        if(signals == null) {
+            throw new ModelingException(0x13);
+        } else {
+            this.signals = signals;
+        }
         this.diagrams = diagrams;
         this.logs = logs;
-        
-        try {
-            stream = new FileInputStream(library);
-        } catch (FileNotFoundException e) {
-            throw new ModelingException(0x01, library);
-        }
-        try {
-            this.library = (Library) yaml.load(stream);
-        } catch(Exception e) {
-            throw new ModelingException(0x10);
-        }
-        
-        try {
-            stream = new FileInputStream(scheme);
-        } catch (FileNotFoundException e) {
-            throw new ModelingException(0x01, scheme);
-        }
-        try {
-            this.scheme = (Scheme) yaml.load(stream);
-            this.scheme.getElements();
-            
-        } catch(Exception e) {
-            throw new ModelingException(0x11);
-        }
-        
-        try {
-            stream = new FileInputStream(signals);
-        } catch (FileNotFoundException e) {
-            throw new ModelingException(0x01, signals);
-        }
-        try {
-            this.signals = (SignalBundle) yaml.load(stream);
-        } catch(Exception e) {
-            throw new ModelingException(0x12);
-        }
-        
-        MainWindow.updateExpandBarElements(this.library.getLibrary().values(), this.scheme);
     }
     
     public void run() {
@@ -91,7 +67,14 @@ public class ModelingEngine implements Runnable {
             }
         }
     }
-    private boolean check() throws ModelingException {
+    public boolean check() throws ModelingException {
+        checkLibrary(library);
+        checkScheme(library, scheme);
+        checkSignals(library, scheme, signals);
+        return true;
+    }
+
+    public static boolean checkScheme(Library library, Scheme scheme) throws ModelingException {
         // checking elements
         for(String elementName : scheme.elements.keySet()) {
             String elementType = scheme.elements.get(elementName);
@@ -129,8 +112,10 @@ public class ModelingEngine implements Runnable {
                 throw new ModelingException(0x33, circuitName + ": " + circuit.contacts.toString());
             }
         }
-        
-        // checking signals
+        return true;
+    }
+
+    public static boolean checkSignals(Library library, Scheme scheme, SignalBundle signals) throws ModelingException {
         for(Contact contact : signals.signals.keySet()) {
             if(scheme.inputs.contains(contact.element) || scheme.outputs.contains(contact.element));
             else if(scheme.elements.containsKey(contact.element)) {
@@ -142,15 +127,16 @@ public class ModelingEngine implements Runnable {
                 throw new ModelingException(0x40, contact.toString());
             }
         }
-        
-        // checking library
+        return true;
+    }
+
+    public static boolean checkLibrary(Library library) throws ModelingException {
         for(String elementName : library.library.keySet()) {
             Element element = library.library.get(elementName);
             if(!element.check()) {
                 throw new ModelingException(0x50, elementName);
             }
         }
-        
         return true;
     }
 

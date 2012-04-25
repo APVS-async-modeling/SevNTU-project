@@ -1,4 +1,3 @@
-
 !!asyncmod.modeling.Library
 library:
   2_AND_OR:
@@ -27,7 +26,6 @@ library:
     name: JK_trigger
     ocnt: 2
     smask: 3
-    cnames: ['j', 'k', 't', 't+', 'q', '!q']
     table:
     - [0,  0,  0,  0,  0,  1]
     - [0,  0,  1,  1,  1,  0]

@@ -44,6 +44,10 @@ public class Signal {
         return array;
     }
     
+    public NavigableMap<Long, Integer> getSignalSet() {
+        return signal;
+    }
+    
     public void setSignal(String[] array) {
         for(int n = 0; n < array.length; n++) {
             Long time = Long.parseLong(array[n].substring(0, array[n].indexOf('=')));

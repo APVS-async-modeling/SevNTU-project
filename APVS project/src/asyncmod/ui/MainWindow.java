@@ -5,7 +5,6 @@ import java.io.BufferedWriter;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
-import java.io.FileReader;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.io.InputStream;
@@ -13,20 +12,26 @@ import java.text.SimpleDateFormat;
 import java.util.Arrays;
 import java.util.Calendar;
 import java.util.Collection;
+import java.util.LinkedList;
+import java.util.List;
 import java.util.Map;
 
 import org.eclipse.swt.SWT;
 import org.eclipse.swt.custom.SashForm;
+import org.eclipse.swt.custom.ScrolledComposite;
 import org.eclipse.swt.events.ControlEvent;
 import org.eclipse.swt.events.ControlListener;
 import org.eclipse.swt.events.SelectionAdapter;
 import org.eclipse.swt.events.SelectionEvent;
+import org.eclipse.swt.events.VerifyEvent;
+import org.eclipse.swt.events.VerifyListener;
 import org.eclipse.swt.graphics.Point;
 import org.eclipse.swt.layout.FillLayout;
 import org.eclipse.swt.layout.GridData;
 import org.eclipse.swt.layout.GridLayout;
 import org.eclipse.swt.layout.RowLayout;
 import org.eclipse.swt.widgets.Button;
+import org.eclipse.swt.widgets.Combo;
 import org.eclipse.swt.widgets.Composite;
 import org.eclipse.swt.widgets.Display;
 import org.eclipse.swt.widgets.ExpandBar;
@@ -49,11 +54,15 @@ import org.yaml.snakeyaml.Yaml;
 import swing2swt.layout.BorderLayout;
 import asyncmod.about.AboutProgram;
 import asyncmod.about.AboutTeam;
+import asyncmod.modeling.Circuit;
+import asyncmod.modeling.Contact;
 import asyncmod.modeling.Element;
 import asyncmod.modeling.Library;
 import asyncmod.modeling.ModelingEngine;
 import asyncmod.modeling.ModelingException;
 import asyncmod.modeling.Scheme;
+import asyncmod.modeling.Signal;
+import asyncmod.modeling.SignalBundle;
 import asyncmod.results_displaying.ModelingResultsDisplayer;
 import asyncmod.ui.timediagrams.TimeDiagramsWindow;
 
@@ -114,18 +123,20 @@ public class MainWindow {
     private ModelingResultsDisplayer displayer;
 
     //files
-    private static File libraryFile;
-    private static File discreteModelFile;
-    private static File signalsFile;
+    private Library library;
+    private Scheme scheme;
+    private SignalBundle signals;
+    //private static File libraryFile;
+    //private static File discreteModelFile;
+    //private static File signalsFile;
 
     // etc
     private final static Calendar cal = Calendar.getInstance();
     static SimpleDateFormat dateFormatter = new SimpleDateFormat("HH:mm:ss '('yyyy.MM.dd')'");
     private static ExpandBar bar;
     private MenuItem mntmSaveModelingResults;    
-    private Text textLibraryEditor;
-    private Text textSchemeEditor;
-    private Text textSignalsEditor;
+    
+    
     private TabItem tabLibraryEditor;
     private Button btnSaveLibrary;
     private Button btnReloadLibrary;
@@ -137,6 +148,29 @@ public class MainWindow {
     private Button btnReloadSignals;
     private static BufferedReader br;
     private static BufferedWriter bw;
+    
+    private Composite le_composite;
+    private Text le_view;
+    
+    private Composite ce_composite;
+    private Text ce_view;
+    private Combo ce_element;
+    private Combo ce_type;
+    private Combo ce_circuit;
+    private Combo ce_source;
+    private Combo ce_output;
+    private Combo ce_input;
+    
+    private Composite se_composite;
+    private Combo se_signal;
+    private Text se_time;
+    private Text se_state;
+    private Text se_view;
+    private Combo ce_circuit2;
+    private Combo ce_drain;
+    
+    
+    
       
     
     /**
@@ -157,6 +191,11 @@ public class MainWindow {
      * Open the window.
      */
     public final void open() {
+
+        library = new Library();
+        scheme = new Scheme();
+        signals = new SignalBundle();
+        
         display = Display.getDefault();     
         
         createContents();
@@ -193,7 +232,7 @@ public class MainWindow {
     protected final void createContents() {
         shell = new Shell();
         shell.setMinimumSize(new Point(500, 390));
-        shell.setSize(WIDTH, HEIGHT);
+        shell.setSize(790, 550);
         shell.setText("APVS async modeling project");
         shell.setLayout(new FillLayout(SWT.HORIZONTAL));
 
@@ -246,85 +285,23 @@ public class MainWindow {
         openLibraryFileMenuItem.addSelectionListener(new SelectionAdapter() {
             @Override
             public void widgetSelected(final SelectionEvent e) {
-                final String libraryFilePath = dlgLibrary.open();
-                if (libraryFilePath != null) {
-                    libraryFile = new File(libraryFilePath);
-                    readFileToTextField(textLibraryEditor, libraryFile);
-                    openDiscreteModelMenuItem.setEnabled(true);
-                    
-                    Yaml yaml = new Yaml();
-                    InputStream stream = null;
-                    Library library = null;
-                    
-                    try {
-                        stream = new FileInputStream(libraryFilePath);
-                    } catch (FileNotFoundException ex) {
-                        showMessage(Messages.ERROR_FILE_NOT_FOUND + libraryFilePath, "Error");
-                    }
-                    try {
-                        library = (Library) yaml.load(stream);
-                        updateExpandBarElements(library.getLibrary().values());
-                        String message = Messages.LIBRARY_FILE_SELECTED + libraryFilePath;
-                        status(message);
-                    } catch(Exception ex) {
-                        showMessage(Messages.ERROR_WRONG_LIBRARY_DOCUMENT + libraryFilePath, "Error");                        
-                    }
-                    
-                    textLibraryEditor.setEnabled(true);
-                    btnReloadLibrary.setEnabled(true);
-                    btnSaveLibrary.setEnabled(true);
-                    
-                } else {
-                    status(Messages.LIBRARY_FILE_NOT_SELECTED);
-                }
+                loadLibrary();
+                openDiscreteModelMenuItem.setEnabled(true);
+                openSignalsFileMenuItem.setEnabled(true);
             }
         });
 
         openDiscreteModelMenuItem.addSelectionListener(new SelectionAdapter() {
             @Override
             public void widgetSelected(final SelectionEvent e) {
-                final String discreteModelFilePath = dlgDiscreteModel.open();
-                if (discreteModelFilePath != null) {
-                    discreteModelFile = new File(discreteModelFilePath);
-                    readFileToTextField(textSchemeEditor, discreteModelFile);
-//                    DUModelController controller = new DUModelController(discreteModelFilePath);
-//                    try {
-//                        DUModel model = controller.parseDUModelFromFile();
-//                    } catch (IOException exc) {
-//                        showMessage(exc.getMessage(), "Error");
-//                    }
-
-                    textSchemeEditor.setEnabled(true);
-                    btnReloadScheme.setEnabled(true);
-                    btnSaveScheme.setEnabled(true);
-                    
-                    openSignalsFileMenuItem.setEnabled(true);
-
-                    final String message = Messages.DISCRETE_MODEL_FILE_SELECTED + discreteModelFilePath;
-                    status(message);
-                } else {
-                    status(Messages.DISCRETE_MODEL_FILE_NOT_SELECTED);
-                }
+                loadScheme();
             }
         });
         
         openSignalsFileMenuItem.addSelectionListener(new SelectionAdapter() {
             @Override
             public void widgetSelected(final SelectionEvent e) {
-                final String signalsFilePath = dlgSignals.open();
-                if (signalsFilePath != null) {
-                    signalsFile = new File(signalsFilePath);
-                    readFileToTextField(textSignalsEditor, signalsFile);
-                    textSignalsEditor.setEnabled(true);
-                    btnReloadSignals.setEnabled(true);
-                    btnSaveSignals.setEnabled(true);                    
-                    initResetBtn.setEnabled(true);
-                    initResetMenuItem.setEnabled(true);                    
-                    String message = Messages.SIGNALS_FILE_SELECTED + signalsFilePath;
-                    status(message);
-                } else {
-                    status(Messages.SIGNALS_FILE_NOT_SELECTED);
-                }
+                loadSignals();
             }
         });    
         
@@ -605,14 +582,15 @@ public class MainWindow {
         tabLibraryEditor = new TabItem(mainWindowTabFolder, SWT.NONE);
         tabLibraryEditor.setText("Library Editor");
         
-        Composite composite = new Composite(mainWindowTabFolder, SWT.NONE);
-        tabLibraryEditor.setControl(composite);
-        composite.setLayout(new BorderLayout(0, 0));
+        le_composite = new Composite(mainWindowTabFolder, SWT.NONE);
+        tabLibraryEditor.setControl(le_composite);
+        le_composite.setLayout(new BorderLayout(0, 0));
         
-        textLibraryEditor = new Text(composite, SWT.BORDER | SWT.WRAP | SWT.V_SCROLL | SWT.MULTI);
-        textLibraryEditor.setLayoutData(BorderLayout.CENTER);
+        le_view = new Text(le_composite, SWT.BORDER | SWT.WRAP | SWT.V_SCROLL | SWT.MULTI);
+        le_view.setEditable(false);
+        le_view.setLayoutData(BorderLayout.CENTER);
         
-        Composite composite_3 = new Composite(composite, SWT.NONE);
+        Composite composite_3 = new Composite(le_composite, SWT.NONE);
         composite_3.setLayoutData(BorderLayout.NORTH);
         composite_3.setLayout(new GridLayout(2, false));
         
@@ -620,7 +598,7 @@ public class MainWindow {
         btnSaveLibrary.addSelectionListener(new SelectionAdapter() {
             @Override
             public void widgetSelected(SelectionEvent e) {
-                saveFileFromTextField(textLibraryEditor, libraryFile);
+                saveLibrary();
             }
         });
         btnSaveLibrary.setText("Save Library");
@@ -629,7 +607,7 @@ public class MainWindow {
         btnReloadLibrary.addSelectionListener(new SelectionAdapter() {
             @Override
             public void widgetSelected(SelectionEvent e) {
-                readFileToTextField(textLibraryEditor, libraryFile);
+                loadLibrary();
             }
         });
         btnReloadLibrary.setText("Reload Library");
@@ -637,14 +615,11 @@ public class MainWindow {
         tabSchemeEditor = new TabItem(mainWindowTabFolder, SWT.NONE);
         tabSchemeEditor.setText("Scheme Editor");
         
-        Composite composite_1 = new Composite(mainWindowTabFolder, SWT.NONE);
-        tabSchemeEditor.setControl(composite_1);
-        composite_1.setLayout(new BorderLayout(0, 0));
+        ce_composite = new Composite(mainWindowTabFolder, SWT.NONE);
+        tabSchemeEditor.setControl(ce_composite);
+        ce_composite.setLayout(new BorderLayout(0, 0));
         
-        textSchemeEditor = new Text(composite_1, SWT.BORDER | SWT.V_SCROLL | SWT.MULTI);
-        textSchemeEditor.setLayoutData(BorderLayout.CENTER);
-        
-        Composite composite_2 = new Composite(composite_1, SWT.NONE);
+        Composite composite_2 = new Composite(ce_composite, SWT.NONE);
         composite_2.setLayoutData(BorderLayout.NORTH);
         composite_2.setLayout(new GridLayout(2, false));
         
@@ -652,7 +627,7 @@ public class MainWindow {
         btnSaveScheme.addSelectionListener(new SelectionAdapter() {
             @Override
             public void widgetSelected(SelectionEvent e) {
-                saveFileFromTextField(textSchemeEditor, discreteModelFile);
+                saveScheme();
             }
         });
         btnSaveScheme.setText("Save Scheme");
@@ -661,22 +636,221 @@ public class MainWindow {
         btnReloadScheme.addSelectionListener(new SelectionAdapter() {
             @Override
             public void widgetSelected(SelectionEvent e) {
-                readFileToTextField(textSchemeEditor, discreteModelFile);
+                loadScheme();
             }
         });
         btnReloadScheme.setText("Reload Scheme");
         
+        Composite composite_6 = new Composite(ce_composite, SWT.NONE);
+        composite_6.setLayoutData(BorderLayout.CENTER);
+        
+        ce_view = new Text(composite_6, SWT.BORDER | SWT.V_SCROLL | SWT.MULTI);
+        ce_view.setEditable(false);
+        ce_view.setBounds(277, 0, 489, 429);
+        
+        ScrolledComposite scrolledComposite_1 = new ScrolledComposite(composite_6, SWT.BORDER | SWT.H_SCROLL | SWT.V_SCROLL);
+        scrolledComposite_1.setBounds(0, 0, 271, 429);
+        scrolledComposite_1.setExpandHorizontal(true);
+        scrolledComposite_1.setExpandVertical(true);
+        
+        Composite composite_7 = new Composite(scrolledComposite_1, SWT.NONE);
+        
+        Group grpAddElements = new Group(composite_7, SWT.NONE);
+        grpAddElements.setText("Add elements");
+        grpAddElements.setBounds(0, 0, 250, 104);
+        
+        ce_type = new Combo(grpAddElements, SWT.READ_ONLY);
+        ce_type.setToolTipText("Specify element name");
+        ce_type.setBounds(10, 47, 237, 23);
+        
+        Button btnNewButton = new Button(grpAddElements, SWT.NONE);
+        btnNewButton.addSelectionListener(new SelectionAdapter() {
+            @Override
+            public void widgetSelected(SelectionEvent e) {
+                schemeEditorAddElement();
+            }
+        });
+        btnNewButton.setToolTipText("Adds new element of selected type with a specified name or changes type of existing element");
+        btnNewButton.setBounds(10, 76, 75, 25);
+        btnNewButton.setText("Add");
+        
+        Button btnNewButton_1 = new Button(grpAddElements, SWT.NONE);
+        btnNewButton_1.addSelectionListener(new SelectionAdapter() {
+            @Override
+            public void widgetSelected(SelectionEvent e) {
+                schemeEditorDelElement();
+            }
+        });
+        btnNewButton_1.setToolTipText("Deletes element with specified name");
+        btnNewButton_1.setBounds(91, 76, 75, 25);
+        btnNewButton_1.setText("Delete");
+        
+        ce_element = new Combo(grpAddElements, SWT.NONE);
+        ce_element.addSelectionListener(new SelectionAdapter() {
+            @Override
+            public void widgetSelected(SelectionEvent e) {
+                String elementName = ce_element.getItem(ce_element.getSelectionIndex());
+                String elementType = scheme.getElements().get(elementName);
+                ce_type.select(ce_type.indexOf(elementType));
+            }
+        });
+        ce_element.addVerifyListener(new VerifyListener() {
+            public void verifyText(VerifyEvent evt) {
+                if((ce_element.getText() + evt.text).matches("[A-Za-z][A-Za-z0-9_]*")) evt.doit = true;
+                else evt.doit = false;
+            }
+        });
+        ce_element.setBounds(10, 18, 237, 23);
+        
+        Group grpAddCircuit = new Group(composite_7, SWT.NONE);
+        grpAddCircuit.setText("Add circuit");
+        grpAddCircuit.setBounds(0, 110, 250, 104);
+        
+        Button button = new Button(grpAddCircuit, SWT.NONE);
+        button.addSelectionListener(new SelectionAdapter() {
+            @Override
+            public void widgetSelected(SelectionEvent e) {
+                schemeEditorAddCircuit();
+            }
+        });
+        button.setToolTipText("Adds new circuit with a specified name or replaces existing circuit");
+        button.setText("Add");
+        button.setBounds(10, 76, 75, 25);
+        
+        Button button_1 = new Button(grpAddCircuit, SWT.NONE);
+        button_1.addSelectionListener(new SelectionAdapter() {
+            @Override
+            public void widgetSelected(SelectionEvent e) {
+                schemeEditorDelCircuit();
+            }
+        });
+        button_1.setToolTipText("Deletes circuit with specified name");
+        button_1.setText("Delete");
+        button_1.setBounds(91, 76, 75, 25);
+        
+        ce_source = new Combo(grpAddCircuit, SWT.READ_ONLY);
+        ce_source.setToolTipText("Specify source contact name");
+        ce_source.setBounds(10, 47, 237, 23);
+        
+        ce_circuit = new Combo(grpAddCircuit, SWT.NONE);
+        ce_circuit.setBounds(10, 18, 237, 23);
+        
+        Group grpAddContact = new Group(composite_7, SWT.NONE);
+        grpAddContact.setText("Add contact");
+        grpAddContact.setBounds(0, 220, 250, 104);
+        
+        Button button_3 = new Button(grpAddContact, SWT.NONE);
+        button_3.addSelectionListener(new SelectionAdapter() {
+            @Override
+            public void widgetSelected(SelectionEvent e) {
+                schemeEditorAddContact();
+            }
+        });
+        button_3.setToolTipText("Adds new contact to selected circuit");
+        button_3.setText("Add");
+        button_3.setBounds(10, 76, 75, 25);
+        
+        Button button_4 = new Button(grpAddContact, SWT.NONE);
+        button_4.addSelectionListener(new SelectionAdapter() {
+            @Override
+            public void widgetSelected(SelectionEvent e) {
+                schemeEditorDelContact();
+            }
+        });
+        button_4.setToolTipText("Deletes specified contact from specified circuit");
+        button_4.setText("Delete");
+        button_4.setBounds(91, 76, 75, 25);
+        
+        ce_drain = new Combo(grpAddContact, SWT.READ_ONLY);
+        ce_drain.setToolTipText("Specify destination contact name");
+        ce_drain.setBounds(10, 47, 237, 23);
+        
+        ce_circuit2 = new Combo(grpAddContact, SWT.READ_ONLY);
+        ce_circuit2.setToolTipText("Specify circuit name");
+        ce_circuit2.setBounds(10, 18, 237, 23);
+        
+        Group grpAddInput = new Group(composite_7, SWT.NONE);
+        grpAddInput.setBounds(0, 330, 250, 77);
+        grpAddInput.setText("Add input");
+        
+        Button button_6 = new Button(grpAddInput, SWT.NONE);
+        button_6.addSelectionListener(new SelectionAdapter() {
+            @Override
+            public void widgetSelected(SelectionEvent e) {
+                schemeEditorAddInput();
+            }
+        });
+        button_6.setToolTipText("Adds new input to scheme");
+        button_6.setText("Add");
+        button_6.setBounds(10, 49, 75, 25);
+        
+        Button button_7 = new Button(grpAddInput, SWT.NONE);
+        button_7.addSelectionListener(new SelectionAdapter() {
+            @Override
+            public void widgetSelected(SelectionEvent e) {
+                schemeEditorDelInput();
+            }
+        });
+        button_7.setToolTipText("Deletes specified input");
+        button_7.setText("Delete");
+        button_7.setBounds(91, 49, 75, 25);
+        
+        ce_input = new Combo(grpAddInput, SWT.NONE);
+        ce_input.addVerifyListener(new VerifyListener() {
+            public void verifyText(VerifyEvent evt) {
+                if((ce_input.getText() + evt.text).matches("[A-Za-z][A-Za-z0-9_]*")) evt.doit = true;
+                else evt.doit = false;
+            }
+        });
+        ce_input.setToolTipText("Specify input name");
+        ce_input.setBounds(10, 20, 237, 23);
+        
+        Group grpAddOutput = new Group(composite_7, SWT.NONE);
+        grpAddOutput.setBounds(0, 413, 250, 77);
+        grpAddOutput.setText("Add output");
+        
+        Button button_9 = new Button(grpAddOutput, SWT.NONE);
+        button_9.addSelectionListener(new SelectionAdapter() {
+            @Override
+            public void widgetSelected(SelectionEvent e) {
+                schemeEditorAddOutput();
+            }
+        });
+        button_9.setToolTipText("Adds new output to scheme");
+        button_9.setText("Add");
+        button_9.setBounds(10, 49, 75, 25);
+        
+        Button button_10 = new Button(grpAddOutput, SWT.NONE);
+        button_10.addSelectionListener(new SelectionAdapter() {
+            @Override
+            public void widgetSelected(SelectionEvent e) {
+                schemeEditorDelOutput();
+            }
+        });
+        button_10.setToolTipText("Deletes specified output");
+        button_10.setText("Delete");
+        button_10.setBounds(91, 49, 75, 25);
+        
+        ce_output = new Combo(grpAddOutput, SWT.NONE);
+        ce_output.addVerifyListener(new VerifyListener() {
+            public void verifyText(VerifyEvent evt) {
+                if((ce_output.getText() + evt.text).matches("[A-Za-z][A-Za-z0-9_]*")) evt.doit = true;
+                else evt.doit = false;
+            }
+        });
+        ce_output.setToolTipText("Specify output name");
+        ce_output.setBounds(10, 20, 237, 23);
+        scrolledComposite_1.setContent(composite_7);
+        scrolledComposite_1.setMinSize(composite_7.computeSize(SWT.DEFAULT, SWT.DEFAULT));
+        
         tabSignalsEditor = new TabItem(mainWindowTabFolder, SWT.NONE);
         tabSignalsEditor.setText("Signals Editor");
         
-        Composite composite_4 = new Composite(mainWindowTabFolder, SWT.NONE);
-        tabSignalsEditor.setControl(composite_4);
-        composite_4.setLayout(new BorderLayout(0, 0));
+        se_composite = new Composite(mainWindowTabFolder, SWT.NONE);
+        tabSignalsEditor.setControl(se_composite);
+        se_composite.setLayout(new BorderLayout(0, 0));
         
-        textSignalsEditor = new Text(composite_4, SWT.BORDER | SWT.V_SCROLL | SWT.MULTI);
-        textSignalsEditor.setLayoutData(BorderLayout.CENTER);
-        
-        Composite composite_5 = new Composite(composite_4, SWT.NONE);
+        Composite composite_5 = new Composite(se_composite, SWT.NONE);
         composite_5.setLayoutData(BorderLayout.NORTH);
         composite_5.setLayout(new GridLayout(2, false));
         
@@ -684,7 +858,7 @@ public class MainWindow {
         btnSaveSignals.addSelectionListener(new SelectionAdapter() {
             @Override
             public void widgetSelected(SelectionEvent e) {
-                saveFileFromTextField(textSignalsEditor, signalsFile);
+                saveSignals();
             }
         });
         btnSaveSignals.setText("Save Signals");
@@ -693,10 +867,54 @@ public class MainWindow {
         btnReloadSignals.addSelectionListener(new SelectionAdapter() {
             @Override
             public void widgetSelected(SelectionEvent e) {
-                readFileToTextField(textSignalsEditor, signalsFile);
+                loadSignals();
             }
         });
         btnReloadSignals.setText("Reload Signals");
+        
+        Composite composite_8 = new Composite(se_composite, SWT.NONE);
+        composite_8.setLayoutData(BorderLayout.CENTER);
+        
+        se_view = new Text(composite_8, SWT.BORDER | SWT.V_SCROLL | SWT.MULTI);
+        se_view.setEnabled(true);
+        se_view.setEditable(false);
+        se_view.setLocation(253, 0);
+        se_view.setSize(513, 429);
+        
+        se_signal = new Combo(composite_8, SWT.READ_ONLY);
+        se_signal.addSelectionListener(new SelectionAdapter() {
+            @Override
+            public void widgetSelected(SelectionEvent e) {
+                signalEditorSelectionChanged();
+            }
+        });
+        se_signal.setBounds(10, 10, 237, 23);
+        
+        Button se_add = new Button(composite_8, SWT.NONE);
+        se_add.addSelectionListener(new SelectionAdapter() {
+            @Override
+            public void widgetSelected(SelectionEvent e) {
+                signalEditorAddSignal();
+            }
+        });
+        se_add.setBounds(10, 351, 75, 25);
+        se_add.setText("Add signal");
+        
+        Button se_del = new Button(composite_8, SWT.NONE);
+        se_del.addSelectionListener(new SelectionAdapter() {
+            @Override
+            public void widgetSelected(SelectionEvent e) {
+                signalEditorDelSignal();
+            }
+        });
+        se_del.setBounds(91, 351, 75, 25);
+        se_del.setText("Delete signal");
+        
+        se_time = new Text(composite_8, SWT.BORDER | SWT.WRAP | SWT.V_SCROLL | SWT.MULTI);
+        se_time.setBounds(10, 39, 237, 150);
+        
+        se_state = new Text(composite_8, SWT.BORDER | SWT.WRAP | SWT.V_SCROLL | SWT.MULTI);
+        se_state.setBounds(10, 195, 237, 150);
         
         TabItem LogTab = new TabItem(mainWindowTabFolder, SWT.NONE);
         LogTab.setText("Logs and results");
@@ -759,15 +977,14 @@ public class MainWindow {
     }
     
     private void setControlsAndMenusEnabled(boolean state) {
-        textLibraryEditor.setEnabled(state);
-        btnReloadLibrary.setEnabled(state);
-        btnSaveLibrary.setEnabled(state);
-        textSchemeEditor.setEnabled(state);
-        btnReloadScheme.setEnabled(state);
-        btnSaveScheme.setEnabled(state);        
-        textSignalsEditor.setEnabled(state);
-        btnReloadSignals.setEnabled(state);
-        btnSaveSignals.setEnabled(state);
+        le_view.setEnabled(true);
+        btnReloadLibrary.setEnabled(true);
+        btnSaveLibrary.setEnabled(true);
+        ce_view.setEnabled(true);
+        btnReloadScheme.setEnabled(true);
+        btnSaveScheme.setEnabled(true);        
+        btnReloadSignals.setEnabled(true);
+        btnSaveSignals.setEnabled(true);
         initResetBtn.setEnabled(state);
         stepFwdBtn.setEnabled(state);
         stepBwdBtn.setEnabled(state);
@@ -859,18 +1076,6 @@ public class MainWindow {
 //        }
 //        textField.append("\n");
     }
-
-    public static File getDiscreteModelFile() {
-        return discreteModelFile;
-    }
-
-    public static File getSignalsFile() {
-        return signalsFile;
-    }
-
-    public static File getLibraryFile() {
-        return libraryFile;
-    }
     
     /**
      * Sets the modeling time to the text field.
@@ -930,11 +1135,9 @@ public class MainWindow {
         // Creating the Modeling Core object and launching it
         // TODO Allow to check log and diagram files
         try {
-            engine = new ModelingEngine(libraryFile.getAbsolutePath(), discreteModelFile.getAbsolutePath(), 
-                    signalsFile.getAbsolutePath(), "test-diagrams.log", "test-logs.log");
-            
+            long time = System.currentTimeMillis();
+            engine = new ModelingEngine(library, scheme, signals, time + "-diagrams.log", time + "-logs.log");
             displayer = new ModelingResultsDisplayer(engine);
-            
         } catch (ModelingException e) {
             MainWindow.showMessage(e.getMessage(), "Error");
             status(Messages.ERROR_WHILE_LAUNCHING_MODELING);
@@ -1040,7 +1243,7 @@ public class MainWindow {
         return "Elements: [" + result.substring(0, result.length() - 2) + "]";
     }
     
-    public static void updateExpandBarElements(Collection<Element> libraryElements) {
+    public void updateExpandBarElements(Collection<Element> libraryElements) {
         for (ExpandItem item : bar.getItems()) {
             item.dispose();
         }
@@ -1081,47 +1284,464 @@ public class MainWindow {
         return result + "";
     }
     
-    public static void readFileToTextField(Text textField, File file) {
-        textField.setText("");
-        try {
-            br = new BufferedReader(new FileReader(file));
-            String line;
-            while((line = br.readLine()) != null){
-                textField.append("\n" + line);
+    public static Long getCurrentNode() {
+        return nodes[index];
+    }
+        
+    //// LIBRARY ////
+    public void loadLibrary() {
+        final String libraryFilePath = dlgLibrary.open();
+        if (libraryFilePath != null) {
+            Yaml yaml = new Yaml();
+            InputStream stream = null;
+            
+            try {
+                stream = new FileInputStream(libraryFilePath);
+            } catch (FileNotFoundException ex) {
+                showMessage(Messages.ERROR_FILE_NOT_FOUND + libraryFilePath, "Error");
             }
-        } catch (IOException e) {
-            showMessage("Can`t read file " + file.getAbsolutePath(), "Error");
-            e.printStackTrace();
-        } finally {
-            if (br != null) {
-                try {
-                    br.close();
-                } catch (IOException e) {
-                    e.printStackTrace();
-                }
+            try {
+                library = (Library) yaml.load(stream);
+                updateExpandBarElements(library.getLibrary().values());
+                String message = Messages.LIBRARY_FILE_SELECTED + libraryFilePath;
+                status(message);
+                schemeEditorPrepare();
+                signalEditorPrepare();
+                le_view.setText(yaml.dump(library));
+            } catch(Exception ex) {
+                showMessage(Messages.ERROR_WRONG_LIBRARY_DOCUMENT + libraryFilePath, "Error");                        
             }
+        } else {
+            status(Messages.LIBRARY_FILE_NOT_SELECTED);
         }
     }
-
-    public static void saveFileFromTextField(Text textField, File file) {
+    
+    public void saveLibrary() {
+        final String libraryFilePath = dlgSignals.open();
+        if (libraryFilePath != null) {
+            Yaml yaml = new Yaml();
+            BufferedWriter stream = null;
+            try {
+                stream = new BufferedWriter(new FileWriter(libraryFilePath));
+                stream.write(yaml.dump(library));
+                stream.close();
+            } catch (FileNotFoundException ex) {
+                showMessage(Messages.ERROR_FILE_NOT_FOUND + libraryFilePath, "Error");
+            } catch (IOException ex) {
+                showMessage(Messages.ERROR_CANT_WRITE_TO_FILE + libraryFilePath, "Error");
+            }
+            String message = Messages.FILE_SAVED + libraryFilePath;
+            status(message);
+        } else {
+            status(Messages.LIBRARY_FILE_NOT_SELECTED);
+        }
+    }
+    
+    //// SCHEME ////
+    public void loadScheme() {
+        final String discreteModelFilePath = dlgDiscreteModel.open();
+        if (discreteModelFilePath != null) {
+            Yaml yaml = new Yaml();
+            InputStream stream = null;
+            try {
+                stream = new FileInputStream(discreteModelFilePath);
+            } catch (FileNotFoundException ex) {
+                showMessage(Messages.ERROR_FILE_NOT_FOUND + discreteModelFilePath, "Error");
+            }
+            try {
+                scheme = (Scheme) yaml.load(stream);
+            } catch(Exception ex) {
+                showMessage(Messages.ERROR_WRONG_SCHEME_DOCUMENT + discreteModelFilePath, "Error");
+            }
+            MainWindow.updateExpandBarElements(library.getLibrary().values(), scheme);
+            schemeEditorPrepare();
+            signalEditorPrepare();
+            final String message = Messages.DISCRETE_MODEL_FILE_SELECTED + discreteModelFilePath;
+            status(message);
+        } else {
+            status(Messages.DISCRETE_MODEL_FILE_NOT_SELECTED);
+        }
+    }
+    
+    public void saveScheme() {
+        final String schemeFilePath = dlgSignals.open();
+        if (schemeFilePath != null) {
+            Yaml yaml = new Yaml();
+            BufferedWriter stream = null;
+            try {
+                stream = new BufferedWriter(new FileWriter(schemeFilePath));
+                stream.write(yaml.dump(scheme));
+                stream.close();
+            } catch (FileNotFoundException ex) {
+                showMessage(Messages.ERROR_FILE_NOT_FOUND + schemeFilePath, "Error");
+            } catch (IOException ex) {
+                showMessage(Messages.ERROR_CANT_WRITE_TO_FILE + schemeFilePath, "Error");
+            }
+            String message = Messages.FILE_SAVED + schemeFilePath;
+            status(message);
+        } else {
+            status(Messages.LIBRARY_FILE_NOT_SELECTED);
+        }
+    }
+    
+    public void schemeEditorPrepare() {
+        boolean libraryCorrect = false;
+        boolean schemeCorrect = false;
+        ce_element.removeAll();
+        ce_circuit.removeAll();
+        ce_input.removeAll();
+        ce_output.removeAll();
+        
         try {
-            bw = new BufferedWriter(new FileWriter(file));
-            bw.write(textField.getText());
-        } catch (IOException e) {
-            showMessage("Can`t write file " + file.getAbsolutePath(), "Error");
+            libraryCorrect = library != null ? ModelingEngine.checkLibrary(library) : false;
+            schemeCorrect = libraryCorrect ? scheme != null ? ModelingEngine.checkScheme(library, scheme) : false : false;
+        } catch (ModelingException e) {
+            MainWindow.showMessage(e.getMessage(), "Error");
             e.printStackTrace();
-        } finally {
-            if (bw != null) {
-                try {
-                    bw.close();
-                } catch (IOException e) {
-                    e.printStackTrace();
+        }
+        
+        if(libraryCorrect) {
+            ce_type.setItems(library.getLibrary().keySet().toArray(new String[0]));
+        }
+        if(schemeCorrect) {
+            ce_element.setItems(scheme.getElements().keySet().toArray(new String[0]));
+            ce_circuit.setItems(scheme.getCircuits().keySet().toArray(new String[0]));
+            ce_circuit2.setItems(ce_circuit.getItems());
+            ce_input.setItems(scheme.getInputs().toArray(new String[0]));
+            ce_output.setItems(scheme.getOutputs().toArray(new String[0]));
+            
+            for(String elementName : scheme.getElements().keySet()) {
+                Element element = library.getLibrary().get(scheme.getElements().get(elementName));
+                for(int n = 0; n < element.getIcnt(); n++) {
+                    ce_drain.add(new Contact(elementName, n).toString());
                 }
+                for(int n = element.getIcnt(); n < element.getIcnt() + element.getOcnt(); n++) {
+                    ce_source.add(new Contact(elementName, n).toString());
+                }
+            }
+            
+            Yaml yaml = new Yaml();
+            ce_view.setText(yaml.dump(scheme));
+        }
+    }
+    
+    public void schemeEditorAddElement() {
+        if(ce_element.getSelectionIndex() == -1 || ce_type.getSelectionIndex() == -1) return;
+        String elementName = ce_element.getText();
+        String elementType = ce_type.getText();
+                
+        scheme.getElements().put(elementName, elementType);
+        Element element = library.getLibrary().get(elementType);
+        ce_element.add(elementName);
+        for(int n = 0; n < element.getIcnt() + element.getOcnt() + element.getEcnt(); n++)
+        {
+            se_signal.add(new Contact(elementName, n).toString());
+        }
+        for(int n = 0; n < element.getIcnt(); n++) {
+            ce_drain.add(new Contact(elementName, n).toString());
+        }
+        for(int n = element.getIcnt(); n < element.getIcnt() + element.getOcnt(); n++) {
+            ce_source.add(new Contact(elementName, n).toString());
+        }
+        schemeEditorSchemeChanged();
+    }
+    
+    public void schemeEditorDelElement() {
+        if(ce_element.getSelectionIndex() == -1) return;
+        String elementName = ce_element.getText();
+        String elementType = scheme.getElements().get(elementName);
+        Element element = library.getLibrary().get(elementType);
+        
+        ce_element.remove(elementName);
+        scheme.getElements().remove(elementName);
+        List<String> sourceFor = new LinkedList<String>();
+  circ: for(String circuitName : scheme.getCircuits().keySet()) {
+            Circuit circuit = scheme.getCircuits().get(circuitName);
+            for(int n = element.getIcnt(); n < element.getIcnt() + element.getOcnt(); n++) {
+                if(circuit.getContacts().contains(new Contact(elementName, n))) {
+                    sourceFor.add(circuitName);
+                    continue circ;
+                }
+            }
+            for(int n = 0; n < element.getIcnt(); n++) {
+                circuit.getContacts().remove(new Contact(elementName, n));
+            }
+        }
+        for(String circuitName : sourceFor) {
+            scheme.getCircuits().remove(circuitName);
+            ce_circuit.remove(circuitName);
+            ce_circuit2.remove(circuitName);
+        }
+        
+        for(int n = 0; n < element.getIcnt() + element.getOcnt() + element.getEcnt(); n++)
+        {
+            se_signal.remove(new Contact(elementName, n).toString());
+        }
+        for(int n = 0; n < element.getIcnt(); n++)
+        {
+            ce_drain.remove(new Contact(elementName, n).toString());
+        }
+        for(int n = element.getIcnt(); n < element.getIcnt() + element.getOcnt(); n++)
+        {
+            ce_source.remove(new Contact(elementName, n).toString());
+        }
+        schemeEditorSchemeChanged();
+        signalEditorSignalsChanged();
+    }
+    
+    public void schemeEditorAddCircuit() {
+        if(ce_circuit.getSelectionIndex() == -1 || ce_source.getSelectionIndex() == -1) return;
+        String circuitName = ce_circuit.getText();
+        ce_circuit.add(circuitName);
+        ce_circuit2.add(circuitName);
+        
+        Circuit circuit = new Circuit();
+        circuit.getContacts().add(new Contact(ce_source.getText()));
+        scheme.getCircuits().put(circuitName, circuit);
+        
+        schemeEditorSchemeChanged();
+    }
+    
+    public void schemeEditorDelCircuit() {
+        if(ce_circuit.getSelectionIndex() == -1) return;
+        String circuitName = ce_circuit.getText();
+        ce_circuit.remove(circuitName);
+        ce_circuit2.remove(circuitName);
+        
+        scheme.getCircuits().remove(circuitName);
+        
+        schemeEditorSchemeChanged();
+    }
+    
+    public void schemeEditorAddContact() {
+        if(ce_circuit2.getSelectionIndex() == -1 || ce_drain.getSelectionIndex() == -1) return;
+        String circuitName = ce_circuit2.getText();
+        String contactName = ce_drain.getText();
+        
+        scheme.getCircuits().get(circuitName).getContacts().add(new Contact(contactName));
+        
+        schemeEditorSchemeChanged();
+    }
+    
+    public void schemeEditorDelContact() {
+        if(ce_circuit2.getSelectionIndex() == -1 || ce_drain.getSelectionIndex() == -1) return;
+        String circuitName = ce_circuit2.getText();
+        String contactName = ce_drain.getText();
+        
+        scheme.getCircuits().get(circuitName).getContacts().remove(new Contact(contactName));
+        
+        schemeEditorSchemeChanged();
+    }
+    
+    public void schemeEditorAddInput() {
+        if(ce_input.getSelectionIndex() == -1) return;
+        String inputName = ce_input.getText();
+        scheme.getInputs().add(inputName);
+        ce_input.add(inputName);
+        se_signal.add(new Contact(inputName, -1).toString());
+        
+        schemeEditorSchemeChanged();
+    }
+    
+    public void schemeEditorDelInput() {
+        if(ce_input.getSelectionIndex() == -1) return;
+        String inputName = ce_input.getText();
+        scheme.getInputs().remove(inputName);
+        ce_input.remove(inputName);
+        se_signal.remove(new Contact(inputName, -1).toString());
+        
+        schemeEditorSchemeChanged();
+        signalEditorSignalsChanged();
+    }
+    
+    public void schemeEditorAddOutput() {
+        if(ce_output.getSelectionIndex() == -1) return;
+        String outputName = ce_output.getText();
+        scheme.getOutputs().add(outputName);
+        ce_output.add(outputName);
+        se_signal.add(new Contact(outputName, -1).toString());
+        
+        schemeEditorSchemeChanged();
+    }
+    
+    public void schemeEditorDelOutput() {
+        if(ce_output.getSelectionIndex() == -1) return;
+        String outputName = ce_output.getText();
+        scheme.getOutputs().remove(outputName);
+        ce_output.remove(outputName);
+        se_signal.remove(new Contact(outputName, -1).toString());
+        
+        schemeEditorSchemeChanged();
+        signalEditorSignalsChanged();
+    }
+    
+    public void schemeEditorSchemeChanged() {
+        Yaml yaml = new Yaml();
+        ce_view.setText(yaml.dump(scheme));
+    }
+    
+    //// SIGNALS ////
+    public void loadSignals() {
+        final String signalsFilePath = dlgSignals.open();
+        if (signalsFilePath != null) {
+            
+            Yaml yaml = new Yaml();
+            InputStream stream = null;
+            
+            try {
+                stream = new FileInputStream(signalsFilePath);
+            } catch (FileNotFoundException ex) {
+                showMessage(Messages.ERROR_FILE_NOT_FOUND + signalsFilePath, "Error");
+            }
+            try {
+                signals = (SignalBundle) yaml.load(stream);
+                stream.close();
+            } catch(Exception ex) {
+                showMessage(Messages.ERROR_WRONG_SIGNALS_DOCUMENT + signalsFilePath, "Error");
+            }
+            initResetBtn.setEnabled(true);
+            initResetMenuItem.setEnabled(true);                    
+            String message = Messages.SIGNALS_FILE_SELECTED + signalsFilePath;
+            status(message);
+            signalEditorPrepare();
+            
+            se_signal.select(-1);
+            signalEditorSignalsChanged();
+            signalEditorSelectionChanged();
+        } else {
+            status(Messages.SIGNALS_FILE_NOT_SELECTED);
+        }
+    }
+    
+    public void saveSignals() {
+        final String signalsFilePath = dlgSignals.open();
+        if (signalsFilePath != null) {
+            Yaml yaml = new Yaml();
+            BufferedWriter stream = null;
+            try {
+                stream = new BufferedWriter(new FileWriter(signalsFilePath));
+                stream.write(yaml.dump(signals));
+                stream.close();
+            } catch (FileNotFoundException ex) {
+                showMessage(Messages.ERROR_FILE_NOT_FOUND + signalsFilePath, "Error");
+            } catch (IOException ex) {
+                showMessage(Messages.ERROR_CANT_WRITE_TO_FILE + signalsFilePath, "Error");
+            }
+            String message = Messages.FILE_SAVED + signalsFilePath;
+            status(message);
+            signalEditorPrepare();
+            se_signal.select(-1);
+            signalEditorSignalsChanged();
+            signalEditorSelectionChanged();
+        } else {
+            status(Messages.SIGNALS_FILE_NOT_SELECTED);
+        }
+    }
+    
+    public void signalEditorPrepare() {
+        boolean libraryCorrect = false;
+        boolean schemeCorrect = false;
+        boolean signalsCorrect = false;
+        se_signal.removeAll();
+        
+        try {
+            libraryCorrect = library != null ? ModelingEngine.checkLibrary(library) : false;
+            schemeCorrect = libraryCorrect ? scheme != null ? ModelingEngine.checkScheme(library, scheme) : false : false;
+        } catch (ModelingException e) {
+            MainWindow.showMessage(e.getMessage(), "Error");
+            e.printStackTrace();
+        }
+        
+        if(schemeCorrect) {
+            for(String input : scheme.getInputs()) {
+                se_signal.add(new Contact(input, -1).toString());
+            }
+            for(String output : scheme.getOutputs()) {
+                se_signal.add(new Contact(output, -1).toString());
+            }
+            for(String elementName : scheme.getElements().keySet()) {
+                Element element = library.getLibrary().get(scheme.getElements().get(elementName));
+                for(int n = 0; n < element.getIcnt() + element.getOcnt() + element.getEcnt(); n++)
+                {
+                    se_signal.add(new Contact(elementName, n).toString());
+                }
+            }
+            Yaml yaml = new Yaml();
+            se_view.setText(yaml.dump(signals));
+        }
+        if(signalsCorrect) {
+            Contact contact = new Contact(se_signal.getText());
+            Signal signal = signals.getSignals().get(contact);
+            if(signal != null) {
+                StringBuilder sb_time = new StringBuilder();
+                StringBuilder sb_state = new StringBuilder();
+                for(Long key : signal.getSignalSet().keySet()) {
+                    sb_time.append(key).append(' ');
+                    sb_state.append(signal.getState(key)).append(' ');
+                }
+                se_time.setText(sb_time.toString());
+                se_state.setText(sb_state.toString());
+            } else {
+                se_time.setText("");
+                se_state.setText("");
             }
         }
     }
     
-    public static Long getCurrentNode() {
-        return nodes[index];
+    private void signalEditorSelectionChanged() {
+        if(se_signal.getSelectionIndex() == -1) return;
+        Contact contact = new Contact(se_signal.getText());
+        Signal signal = signals.getSignals().get(contact);
+        if(signal != null) {
+            StringBuilder sb_time = new StringBuilder();
+            StringBuilder sb_state = new StringBuilder();
+            for(Long key : signal.getSignalSet().keySet()) {
+                sb_time.append(key).append(' ');
+                sb_state.append(signal.getState(key)).append(' ');
+            }
+            se_time.setText(sb_time.toString());
+            se_state.setText(sb_state.toString());
+        } else {
+            se_time.setText("");
+            se_state.setText("");
+        }
+    }
+    
+    private void signalEditorSignalsChanged() {
+        Yaml yaml = new Yaml();
+        se_view.setText(yaml.dump(signals));
+    }
+    
+    private void signalEditorAddSignal() {
+        if(se_signal.getSelectionIndex() == -1) return;
+        if(signals == null) signals = new SignalBundle();
+        Contact contact = new Contact(se_signal.getText());
+        Signal signal = new Signal();
+        String text = se_time.getText().replaceAll("[^0-9]+", " ").trim();
+        if(text.length() < 1) return;
+        String[] time = text.split(" ");
+        text = se_state.getText().replaceAll("[^0-9]+", " ").trim();
+        if(text.length() < 1) return;
+        String[] state = text.split(" ");
+        for(int n = 0; n < Math.min(time.length, state.length); n++) {
+            long ntime = time[n].length() > 0 ? Long.parseLong(time[n]) : -1;
+            int nstate = state[n].length() > 0 ? Integer.parseInt(state[n]) : -1;
+            signal.getSignalSet().put(ntime, nstate);
+        }
+        signals.getSignals().put(contact, signal);
+        
+        signalEditorSelectionChanged();
+        signalEditorSignalsChanged();
+    }
+    
+    private void signalEditorDelSignal() {
+        if(se_signal.getSelectionIndex() == -1) return;
+        if(signals == null) signals = new SignalBundle();
+        Contact contact = new Contact(se_signal.getText());
+        
+        signals.getSignals().remove(contact);
+        
+        signalEditorSelectionChanged();
+        signalEditorSignalsChanged();
     }
 }

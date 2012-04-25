@@ -16,11 +16,17 @@ public final class Messages {
     public static final String RESULTS_NOT_SAVED = "Results were not saved.";
     public static final String MODELING_TIME_DOESNT_CHANGED = "Modeling time doesn`t changed.";
     public static final String MODELING_TIME_CHANGING = "Modeling time changing using goto dialog.";
+    public static final String FILE_SAVED = "File successfully saved.";
     // errors
     public static final String ERROR_WHILE_LAUNCHING_MODELING = "Error while launching modeling.";
     public static final String ERROR_WHILE_MODELING_SCHEME = "Error while modeling scheme.";
     public static final String ERROR_FILE_NOT_FOUND = "File not found: ";
-    public static final String ERROR_WRONG_LIBRARY_DOCUMENT = "Неверный документ библиотеки.";
+    public static final String ERROR_WRONG_LIBRARY_DOCUMENT = "Wrong library file.";
+    public static final String ERROR_WRONG_SCHEME_DOCUMENT = "Wrong scheme file.";
+    public static final String ERROR_WRONG_SIGNALS_DOCUMENT = "Wrong signal file.";
+    
+    public static final String ERROR_CANT_WRITE_TO_FILE = "Can't write to this file.";
+    
     
     // additional
     public static final String LINE_DELIMITER_SYMBOL = "-";
