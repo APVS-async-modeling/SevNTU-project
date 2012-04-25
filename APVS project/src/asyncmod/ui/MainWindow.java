@@ -65,6 +65,10 @@ import asyncmod.modeling.SignalBundle;
 import asyncmod.results_displaying.ModelingResultsDisplayer;
 import asyncmod.ui.timediagrams.TimeDiagramsWindow;
 import org.eclipse.wb.swt.SWTResourceManager;
+import org.eclipse.swt.layout.FormLayout;
+import org.eclipse.swt.layout.FormData;
+import org.eclipse.swt.layout.FormAttachment;
+import org.eclipse.wb.swt.layout.grouplayout.GroupLayout;
 
 public class MainWindow {
 
@@ -670,49 +674,24 @@ public class MainWindow {
         
         Composite composite_6 = new Composite(ce_composite, SWT.NONE);
         composite_6.setLayoutData(BorderLayout.CENTER);
+        composite_6.setLayout(new FillLayout(SWT.HORIZONTAL));
         
-        ce_view = new Text(composite_6, SWT.BORDER | SWT.V_SCROLL | SWT.MULTI);
-        ce_view.setEditable(false);
-        ce_view.setBounds(277, 0, 489, 429);
+        SashForm sashForm_1 = new SashForm(composite_6, SWT.NONE);
         
-        ScrolledComposite scrolledComposite_1 = new ScrolledComposite(composite_6, SWT.BORDER | SWT.H_SCROLL | SWT.V_SCROLL);
-        scrolledComposite_1.setBounds(0, 0, 271, 429);
+        ScrolledComposite scrolledComposite_1 = new ScrolledComposite(sashForm_1, SWT.BORDER | SWT.H_SCROLL | SWT.V_SCROLL);
         scrolledComposite_1.setExpandHorizontal(true);
         scrolledComposite_1.setExpandVertical(true);
         
         Composite composite_7 = new Composite(scrolledComposite_1, SWT.NONE);
+        composite_7.setLayout(new GridLayout(1, false));
         
         Group ce_elem_grp = new Group(composite_7, SWT.NONE);
+        ce_elem_grp.setLayout(new GridLayout(2, false));
+        ce_elem_grp.setLayoutData(new GridData(SWT.FILL, SWT.FILL, true, true, 1, 1));
         ce_elem_grp.setText("Add elements");
-        ce_elem_grp.setBounds(0, 0, 250, 104);
-        
-        ce_type = new Combo(ce_elem_grp, SWT.READ_ONLY);
-        ce_type.setToolTipText("Specify element name");
-        ce_type.setBounds(10, 47, 237, 23);
-        
-        ce_elem_add = new Button(ce_elem_grp, SWT.NONE);
-        ce_elem_add.addSelectionListener(new SelectionAdapter() {
-            @Override
-            public void widgetSelected(SelectionEvent e) {
-                schemeEditorAddElement();
-            }
-        });
-        ce_elem_add.setToolTipText("Adds new element of selected type with a specified name or changes type of existing element");
-        ce_elem_add.setBounds(10, 76, 75, 25);
-        ce_elem_add.setText("Add");
-        
-        ce_elem_del = new Button(ce_elem_grp, SWT.NONE);
-        ce_elem_del.addSelectionListener(new SelectionAdapter() {
-            @Override
-            public void widgetSelected(SelectionEvent e) {
-                schemeEditorDelElement();
-            }
-        });
-        ce_elem_del.setToolTipText("Deletes element with specified name");
-        ce_elem_del.setBounds(91, 76, 75, 25);
-        ce_elem_del.setText("Delete");
         
         ce_element = new Combo(ce_elem_grp, SWT.NONE);
+        ce_element.setLayoutData(new GridData(SWT.FILL, SWT.FILL, true, true, 2, 1));
         ce_element.addSelectionListener(new SelectionAdapter() {
             @Override
             public void widgetSelected(SelectionEvent e) {
@@ -727,13 +706,47 @@ public class MainWindow {
                 else evt.doit = false;
             }
         });
-        ce_element.setBounds(10, 18, 237, 23);
+        
+        ce_type = new Combo(ce_elem_grp, SWT.READ_ONLY);
+        ce_type.setLayoutData(new GridData(SWT.FILL, SWT.FILL, true, true, 2, 1));
+        ce_type.setToolTipText("Specify element name");
+        
+        ce_elem_add = new Button(ce_elem_grp, SWT.NONE);
+        ce_elem_add.setLayoutData(new GridData(SWT.LEFT, SWT.FILL, false, true, 1, 1));
+        ce_elem_add.addSelectionListener(new SelectionAdapter() {
+            @Override
+            public void widgetSelected(SelectionEvent e) {
+                schemeEditorAddElement();
+            }
+        });
+        ce_elem_add.setToolTipText("Adds new element of selected type with a specified name or changes type of existing element");
+        ce_elem_add.setText("Add");
+        
+        ce_elem_del = new Button(ce_elem_grp, SWT.NONE);
+        ce_elem_del.setLayoutData(new GridData(SWT.LEFT, SWT.FILL, true, true, 1, 1));
+        ce_elem_del.addSelectionListener(new SelectionAdapter() {
+            @Override
+            public void widgetSelected(SelectionEvent e) {
+                schemeEditorDelElement();
+            }
+        });
+        ce_elem_del.setToolTipText("Deletes element with specified name");
+        ce_elem_del.setText("Delete");
         
         Group ce_circ_grp = new Group(composite_7, SWT.NONE);
+        ce_circ_grp.setLayout(new GridLayout(2, false));
+        ce_circ_grp.setLayoutData(new GridData(SWT.FILL, SWT.FILL, true, true, 1, 1));
         ce_circ_grp.setText("Add circuit");
-        ce_circ_grp.setBounds(0, 110, 250, 104);
+        
+        ce_circuit = new Combo(ce_circ_grp, SWT.NONE);
+        ce_circuit.setLayoutData(new GridData(SWT.FILL, SWT.FILL, true, true, 2, 1));
+        
+        ce_source = new Combo(ce_circ_grp, SWT.READ_ONLY);
+        ce_source.setLayoutData(new GridData(SWT.FILL, SWT.FILL, true, true, 2, 1));
+        ce_source.setToolTipText("Specify source contact name");
         
         ce_circ_add = new Button(ce_circ_grp, SWT.NONE);
+        ce_circ_add.setLayoutData(new GridData(SWT.LEFT, SWT.FILL, false, true, 1, 1));
         ce_circ_add.addSelectionListener(new SelectionAdapter() {
             @Override
             public void widgetSelected(SelectionEvent e) {
@@ -742,9 +755,9 @@ public class MainWindow {
         });
         ce_circ_add.setToolTipText("Adds new circuit with a specified name or replaces existing circuit");
         ce_circ_add.setText("Add");
-        ce_circ_add.setBounds(10, 76, 75, 25);
         
         ce_circ_del = new Button(ce_circ_grp, SWT.NONE);
+        ce_circ_del.setLayoutData(new GridData(SWT.LEFT, SWT.FILL, true, true, 1, 1));
         ce_circ_del.addSelectionListener(new SelectionAdapter() {
             @Override
             public void widgetSelected(SelectionEvent e) {
@@ -753,20 +766,22 @@ public class MainWindow {
         });
         ce_circ_del.setToolTipText("Deletes circuit with specified name");
         ce_circ_del.setText("Delete");
-        ce_circ_del.setBounds(91, 76, 75, 25);
-        
-        ce_source = new Combo(ce_circ_grp, SWT.READ_ONLY);
-        ce_source.setToolTipText("Specify source contact name");
-        ce_source.setBounds(10, 47, 237, 23);
-        
-        ce_circuit = new Combo(ce_circ_grp, SWT.NONE);
-        ce_circuit.setBounds(10, 18, 237, 23);
         
         Group ce_cont_grp = new Group(composite_7, SWT.NONE);
+        ce_cont_grp.setLayout(new GridLayout(2, false));
+        ce_cont_grp.setLayoutData(new GridData(SWT.FILL, SWT.FILL, true, true, 1, 1));
         ce_cont_grp.setText("Add contact");
-        ce_cont_grp.setBounds(0, 220, 250, 104);
+        
+        ce_circuit2 = new Combo(ce_cont_grp, SWT.READ_ONLY);
+        ce_circuit2.setLayoutData(new GridData(SWT.FILL, SWT.FILL, true, true, 2, 1));
+        ce_circuit2.setToolTipText("Specify circuit name");
+        
+        ce_drain = new Combo(ce_cont_grp, SWT.READ_ONLY);
+        ce_drain.setLayoutData(new GridData(SWT.FILL, SWT.FILL, true, true, 2, 1));
+        ce_drain.setToolTipText("Specify destination contact name");
         
         ce_cont_add = new Button(ce_cont_grp, SWT.NONE);
+        ce_cont_add.setLayoutData(new GridData(SWT.LEFT, SWT.FILL, false, true, 1, 1));
         ce_cont_add.addSelectionListener(new SelectionAdapter() {
             @Override
             public void widgetSelected(SelectionEvent e) {
@@ -775,9 +790,9 @@ public class MainWindow {
         });
         ce_cont_add.setToolTipText("Adds new contact to selected circuit");
         ce_cont_add.setText("Add");
-        ce_cont_add.setBounds(10, 76, 75, 25);
         
         ce_cont_del = new Button(ce_cont_grp, SWT.NONE);
+        ce_cont_del.setLayoutData(new GridData(SWT.LEFT, SWT.FILL, true, true, 1, 1));
         ce_cont_del.addSelectionListener(new SelectionAdapter() {
             @Override
             public void widgetSelected(SelectionEvent e) {
@@ -786,21 +801,24 @@ public class MainWindow {
         });
         ce_cont_del.setToolTipText("Deletes specified contact from specified circuit");
         ce_cont_del.setText("Delete");
-        ce_cont_del.setBounds(91, 76, 75, 25);
-        
-        ce_drain = new Combo(ce_cont_grp, SWT.READ_ONLY);
-        ce_drain.setToolTipText("Specify destination contact name");
-        ce_drain.setBounds(10, 47, 237, 23);
-        
-        ce_circuit2 = new Combo(ce_cont_grp, SWT.READ_ONLY);
-        ce_circuit2.setToolTipText("Specify circuit name");
-        ce_circuit2.setBounds(10, 18, 237, 23);
         
         Group ce_input_grp = new Group(composite_7, SWT.NONE);
-        ce_input_grp.setBounds(0, 330, 250, 77);
+        ce_input_grp.setLayout(new GridLayout(2, false));
+        ce_input_grp.setLayoutData(new GridData(SWT.FILL, SWT.FILL, true, false, 1, 1));
         ce_input_grp.setText("Add input");
         
+        ce_input = new Combo(ce_input_grp, SWT.NONE);
+        ce_input.setLayoutData(new GridData(SWT.FILL, SWT.FILL, true, true, 2, 1));
+        ce_input.addVerifyListener(new VerifyListener() {
+            public void verifyText(VerifyEvent evt) {
+                if((ce_input.getText() + evt.text).matches("[A-Za-z][A-Za-z0-9_]*")) evt.doit = true;
+                else evt.doit = false;
+            }
+        });
+        ce_input.setToolTipText("Specify input name");
+        
         ce_input_add = new Button(ce_input_grp, SWT.NONE);
+        ce_input_add.setLayoutData(new GridData(SWT.CENTER, SWT.FILL, false, false, 1, 1));
         ce_input_add.addSelectionListener(new SelectionAdapter() {
             @Override
             public void widgetSelected(SelectionEvent e) {
@@ -809,7 +827,6 @@ public class MainWindow {
         });
         ce_input_add.setToolTipText("Adds new input to scheme");
         ce_input_add.setText("Add");
-        ce_input_add.setBounds(10, 49, 75, 25);
         
         ce_input_del = new Button(ce_input_grp, SWT.NONE);
         ce_input_del.addSelectionListener(new SelectionAdapter() {
@@ -820,21 +837,21 @@ public class MainWindow {
         });
         ce_input_del.setToolTipText("Deletes specified input");
         ce_input_del.setText("Delete");
-        ce_input_del.setBounds(91, 49, 75, 25);
         
-        ce_input = new Combo(ce_input_grp, SWT.NONE);
-        ce_input.addVerifyListener(new VerifyListener() {
+        Group ce_output_grp = new Group(composite_7, SWT.NONE);
+        ce_output_grp.setLayoutData(new GridData(SWT.FILL, SWT.FILL, false, false, 1, 1));
+        ce_output_grp.setText("Add output");
+        ce_output_grp.setLayout(new GridLayout(2, false));
+        
+        ce_output = new Combo(ce_output_grp, SWT.NONE);
+        ce_output.setLayoutData(new GridData(SWT.FILL, SWT.FILL, true, true, 2, 1));
+        ce_output.addVerifyListener(new VerifyListener() {
             public void verifyText(VerifyEvent evt) {
-                if((ce_input.getText() + evt.text).matches("[A-Za-z][A-Za-z0-9_]*")) evt.doit = true;
+                if((ce_output.getText() + evt.text).matches("[A-Za-z][A-Za-z0-9_]*")) evt.doit = true;
                 else evt.doit = false;
             }
         });
-        ce_input.setToolTipText("Specify input name");
-        ce_input.setBounds(10, 20, 237, 23);
-        
-        Group ce_output_grp = new Group(composite_7, SWT.NONE);
-        ce_output_grp.setBounds(0, 413, 250, 77);
-        ce_output_grp.setText("Add output");
+        ce_output.setToolTipText("Specify output name");
         
         ce_output_add = new Button(ce_output_grp, SWT.NONE);
         ce_output_add.addSelectionListener(new SelectionAdapter() {
@@ -845,7 +862,6 @@ public class MainWindow {
         });
         ce_output_add.setToolTipText("Adds new output to scheme");
         ce_output_add.setText("Add");
-        ce_output_add.setBounds(10, 49, 75, 25);
         
         ce_output_del = new Button(ce_output_grp, SWT.NONE);
         ce_output_del.addSelectionListener(new SelectionAdapter() {
@@ -856,19 +872,12 @@ public class MainWindow {
         });
         ce_output_del.setToolTipText("Deletes specified output");
         ce_output_del.setText("Delete");
-        ce_output_del.setBounds(91, 49, 75, 25);
-        
-        ce_output = new Combo(ce_output_grp, SWT.NONE);
-        ce_output.addVerifyListener(new VerifyListener() {
-            public void verifyText(VerifyEvent evt) {
-                if((ce_output.getText() + evt.text).matches("[A-Za-z][A-Za-z0-9_]*")) evt.doit = true;
-                else evt.doit = false;
-            }
-        });
-        ce_output.setToolTipText("Specify output name");
-        ce_output.setBounds(10, 20, 237, 23);
         scrolledComposite_1.setContent(composite_7);
         scrolledComposite_1.setMinSize(composite_7.computeSize(SWT.DEFAULT, SWT.DEFAULT));
+        
+        ce_view = new Text(sashForm_1, SWT.BORDER | SWT.V_SCROLL | SWT.MULTI);
+        ce_view.setEditable(false);
+        sashForm_1.setWeights(new int[] {1, 1});
 
         tabSignalsEditor = new TabItem(mainWindowTabFolder, SWT.NONE);
         tabSignalsEditor.setText("Signals Editor");
@@ -905,8 +914,6 @@ public class MainWindow {
         se_view = new Text(composite_8, SWT.BORDER | SWT.V_SCROLL | SWT.MULTI);
         se_view.setEnabled(true);
         se_view.setEditable(false);
-        se_view.setLocation(253, 0);
-        se_view.setSize(513, 429);
         
         se_signal = new Combo(composite_8, SWT.READ_ONLY);
         se_signal.addSelectionListener(new SelectionAdapter() {
@@ -915,7 +922,6 @@ public class MainWindow {
                 signalEditorSelectionChanged();
             }
         });
-        se_signal.setBounds(10, 10, 237, 23);
         
         se_add = new Button(composite_8, SWT.NONE);
         se_add.addSelectionListener(new SelectionAdapter() {
@@ -924,7 +930,6 @@ public class MainWindow {
                 signalEditorAddSignal();
             }
         });
-        se_add.setBounds(10, 351, 75, 25);
         se_add.setText("Add signal");
         
         se_del = new Button(composite_8, SWT.NONE);
@@ -934,14 +939,43 @@ public class MainWindow {
                 signalEditorDelSignal();
             }
         });
-        se_del.setBounds(91, 351, 75, 25);
         se_del.setText("Delete signal");
         
         se_time = new Text(composite_8, SWT.BORDER | SWT.WRAP | SWT.V_SCROLL | SWT.MULTI);
-        se_time.setBounds(10, 39, 237, 150);
         
         se_state = new Text(composite_8, SWT.BORDER | SWT.WRAP | SWT.V_SCROLL | SWT.MULTI);
-        se_state.setBounds(10, 195, 237, 150);
+        GroupLayout gl_composite_8 = new GroupLayout(composite_8);
+        gl_composite_8.setHorizontalGroup(
+            gl_composite_8.createParallelGroup(GroupLayout.LEADING)
+                .add(gl_composite_8.createSequentialGroup()
+                    .add(10)
+                    .add(gl_composite_8.createParallelGroup(GroupLayout.LEADING)
+                        .add(se_signal, GroupLayout.PREFERRED_SIZE, 237, GroupLayout.PREFERRED_SIZE)
+                        .add(se_time, GroupLayout.PREFERRED_SIZE, 237, GroupLayout.PREFERRED_SIZE)
+                        .add(se_state, GroupLayout.PREFERRED_SIZE, 237, GroupLayout.PREFERRED_SIZE)
+                        .add(gl_composite_8.createSequentialGroup()
+                            .add(se_add, GroupLayout.PREFERRED_SIZE, 75, GroupLayout.PREFERRED_SIZE)
+                            .add(6)
+                            .add(se_del, GroupLayout.PREFERRED_SIZE, 75, GroupLayout.PREFERRED_SIZE)))
+                    .add(6)
+                    .add(se_view, GroupLayout.PREFERRED_SIZE, 513, GroupLayout.PREFERRED_SIZE))
+        );
+        gl_composite_8.setVerticalGroup(
+            gl_composite_8.createParallelGroup(GroupLayout.LEADING)
+                .add(gl_composite_8.createSequentialGroup()
+                    .add(10)
+                    .add(se_signal, GroupLayout.PREFERRED_SIZE, GroupLayout.DEFAULT_SIZE, GroupLayout.PREFERRED_SIZE)
+                    .add(8)
+                    .add(se_time, GroupLayout.PREFERRED_SIZE, 150, GroupLayout.PREFERRED_SIZE)
+                    .add(6)
+                    .add(se_state, GroupLayout.PREFERRED_SIZE, 150, GroupLayout.PREFERRED_SIZE)
+                    .add(6)
+                    .add(gl_composite_8.createParallelGroup(GroupLayout.LEADING)
+                        .add(se_add, GroupLayout.PREFERRED_SIZE, 25, GroupLayout.PREFERRED_SIZE)
+                        .add(se_del, GroupLayout.PREFERRED_SIZE, 25, GroupLayout.PREFERRED_SIZE)))
+                .add(se_view, GroupLayout.PREFERRED_SIZE, 429, GroupLayout.PREFERRED_SIZE)
+        );
+        composite_8.setLayout(gl_composite_8);
         
         TabItem LogTab = new TabItem(mainWindowTabFolder, SWT.NONE);
         LogTab.setText("Logs and results");
@@ -993,6 +1027,8 @@ public class MainWindow {
         fullLogText = new Text(fullLogComposite, SWT.BORDER | SWT.READ_ONLY | SWT.WRAP | SWT.V_SCROLL | SWT.MULTI);
         fullLogText.setEditable(false);
               
+        sashForm_1.setWeights(new int[] { 1, 3 });
+        
         setControlsAndMenusEnabled(false);
         schemeEditorSetEnabled(false);
         signalEditorSetEnabled(false);
