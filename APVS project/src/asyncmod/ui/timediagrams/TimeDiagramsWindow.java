@@ -45,9 +45,8 @@ public class TimeDiagramsWindow extends Dialog {
     private Tree tree;
 
     // Non-UI variables
-    private String pathToDiagramsLogFile = "test-diagrams.log";
-    private BufferedReader fr = null;
-    private List<String> lines;
+    private String pathToDiagramsLogFile;
+    private BufferedReader fr = null;    
     private int LastModelingTime;
     
     private int width;
@@ -58,6 +57,8 @@ public class TimeDiagramsWindow extends Dialog {
     Color WHITE = new Color(Display.getDefault(), 255, 255, 255);
     Color LIGHT_GRAY = new Color(Display.getDefault(), 240, 240, 240);
     private Image image;
+    private List<String> lines;
+    private String [][] parsedLines;
     
     public TimeDiagramsWindow(final Shell parent, final int style, long lastModelingTime, String pathToDiagramsLogFile) {
         super(parent, style);
@@ -73,7 +74,9 @@ public class TimeDiagramsWindow extends Dialog {
             String line;
             while ((line = fr.readLine()) != null) {
                 lines.add(line.replaceAll("\t+", "           "));
-            }
+            }            
+            parsedLines = parseLines(lines);
+            
         } catch (FileNotFoundException e) {
             MainWindow.showMessage(Messages.TIME_DIAGRAMS_COULD_NOT_OPEN_LOGFILE + this.pathToDiagramsLogFile, "Error");
             e.printStackTrace();
@@ -95,6 +98,20 @@ public class TimeDiagramsWindow extends Dialog {
             }
         }
         return null;
+    }
+
+    private String[][] parseLines(List<String> lines) {
+        int wordsNum = lines.get(0).split("\\s+").length;
+        String[][] result = new String [lines.size()][wordsNum];
+        int count = 0;
+        for(String line: lines) {
+            String []words = line.split("\\s+");
+            for(int i=0; i<wordsNum; i++){
+                result[count][i] = words[i];
+            }
+            count++;
+        }
+        return result;
     }
 
     public void show(int coordX, int coordY) {
@@ -345,18 +362,63 @@ public class TimeDiagramsWindow extends Dialog {
         int arrowStartXPosition = contactTextDistance + 10;
         gc.drawString(contactLabel, contactTextDistance, arrowStartYPosition); // нарисовать подпись контакта
         strelka(gc, arrowStartXPosition + 10, arrowStartYPosition, width - 15, arrowStartYPosition, 7); // нарисовать линию со стрелочкой для текущего контакта         
-        risuemPodpisiPodLiniei(gc, contactTextDistance + 10, arrowStartYPosition);      
+        risuemPodpisiPodLiniei(gc, contactTextDistance + 10, arrowStartYPosition);
+        if(!contactLabel.contains("=")){
+            contactLabel+="=-1";
+        }
         drawDigramData(gc, arrowStartXPosition, arrowStartYPosition, contactLabel); // нарисовать сами 0, 1 , Х на диаграмме        
     }
 
     private void drawDigramData(GC gc, int arrowStartXPsition, int arrowStartYPosition, String contactLabel) {
-        String modelingTime = MainWindow.getCurrentNode() + "";
+        String modelingTime = MainWindow.getCurrentNode() + "";        
+        gc.drawString(modelingTime, arrowStartXPsition, arrowStartYPosition - 17); // test        
         
-        gc.drawString(modelingTime, arrowStartXPsition, arrowStartYPosition - 17); // test
+        List<Point> points = new LinkedList<Point>();
+               
+        int diagramsHeight = 9;
+
+        int rowIndex = getRowIndex(contactLabel);
         
+        int displacement = 10;
+        
+//        for(int j=0; j<getLastColumnIndex(modelingTime); j++) {
+//            int data = Integer.parseInt(parsedLines[rowIndex][j+1]);
+//            switch(data) {
+//            case 0:
+//                points.add(new Point(x, y));
+//                break;
+//            case 1:
+//                break;
+//            case 2:
+//                break;
+//            }
+//            
+//        }
         
     }
 
+    private int getLastColumnIndex(String modelingTime) {
+        int result = 0;
+        for (int j = 0; j < parsedLines[0].length; j++) {
+            if(modelingTime.equals(parsedLines[0][j])){
+                result = j;
+                break;
+            }
+        }
+        return result;
+    }
+    
+    private int getRowIndex(String contactLabel) {
+        int result = 0;
+        for (int i = 0; i < parsedLines.length; i++) {
+            if(contactLabel.equals(parsedLines[i][0])) {
+                result = i;
+                break;
+            }
+        }
+        return result;
+    }
+    
     private void risuemPodpisiPodLiniei(GC gc, int x, int y) {     
         double step = (int) Math.sqrt(LastModelingTime + 0.0);
         for (double i = x; i < LastModelingTime; i += step) {
