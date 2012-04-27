@@ -1,0 +1,58 @@
+!!asyncmod.modeling.Library
+library:
+  2_AND_NOT:
+    delay: 15
+    descr: 2-input 3-state AND with inventor
+    ecnt: 0
+    icnt: 2
+    name: 2_AND_NOT
+    ocnt: 1
+    formulas:
+      2: 0 1 &
+  3_AND_NOT:
+    delay: 15
+    descr: 3-input 3-state AND with inventor
+    ecnt: 0
+    icnt: 3
+    name: 3_AND_NOT
+    ocnt: 1
+    formulas:
+      3: 0 1 & 2 &
+  2_OR_NOT:
+    delay: 15
+    descr: 2-input 3-state OR with inventor
+    ecnt: 0
+    icnt: 2
+    name: 2_OR_NOT
+    ocnt: 1
+    formulas:
+      2: 0 1 |
+  3_OR_NOT:
+    delay: 15
+    descr: 3-input 3-state OR with inventor
+    ecnt: 0
+    icnt: 3
+    name: 3_OR_NOT
+    ocnt: 1
+    formulas:
+      3: 0 1 | 2 |
+  JK_trigger:
+    delay: 65
+    descr: JK controlled trigger
+    ecnt: 1
+    icnt: 2
+    name: JK_trigger
+    ocnt: 2
+    formulas:
+      3: 2 ~ 0 & 2 1 ~ & |
+      4: 3
+      5: 4 ~
+  4_MUX:
+    delay: 60
+    descr: 4-input 3-state MUX
+    ecnt: 0
+    icnt: 6
+    name: 4_MUX
+    ocnt: 1
+    formulas:
+      6: 4 ~ 5 ~ & 0 & 4 ~ 5 & 1 & | 4 5 ~ & 2 & | 4 5 & 3 & |
