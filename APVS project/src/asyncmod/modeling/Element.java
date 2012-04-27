@@ -1,5 +1,8 @@
 package asyncmod.modeling;
 
+import java.util.Map;
+import java.util.TreeMap;
+
 public class Element {
     protected String name;
     protected String descr;
@@ -7,38 +10,21 @@ public class Element {
     protected int icnt;
     protected int ocnt;
     protected int ecnt;
-    protected int smask;
-    protected String[] cnames;
-    protected Integer[][] table;
+    
+    /* inputs + internal(t) + internal(t+1) outputs */ 
+    
+    //protected Map<Integer, String> cnames;
+    protected Map<Integer, Formula> formulas;
     
     public Element() {
-        delay = icnt = ocnt = ecnt = smask = -1;
-        cnames = null;
-        table = null;
+        formulas = new TreeMap<Integer, Formula>();
+        //cnames = new HashMap<Integer, String>();
+        delay = icnt = ocnt = ecnt = -1;
     }
     
-    public void process(int[] array) {
-        for(int n = icnt + ecnt; n < array.length; n++) {
-            array[n] = 2;
-        }
-        for(Integer[] row : table) {
-            if(row.length != array.length) {
-                return;
-            }
-            else {
-                boolean equal = true;
-                for(int n = 0; n < icnt + ecnt; n++) {
-                    equal &= (row[n] == array[n]);
-                }
-                if(equal) {
-                    for(int n = icnt + ecnt; n < array.length; n++) {
-                        array[n] = row[n];
-                    }
-                    return;
-                } else {
-                    continue;
-                }
-            }
+    public void calculate(int[] array) {
+        for(Integer contact : formulas.keySet()) {
+            array[contact] = formulas.get(contact).calculate(array);
         }
     }
     
@@ -49,17 +35,12 @@ public class Element {
         if(icnt == -1) return false;
         if(ocnt == -1) return false;
         if(ecnt == -1) return false;
-        if(smask == -1) return false;
-        if(table == null) return false;
         //if(cnames == null) return false;
-        
-        int columns = icnt + ecnt * 2  + ocnt;
-        //int rows = (int)Math.pow(Integer.bitCount(smask) + 1, icnt + ecnt);
-        
-        //if(table.length != rows) return false;
-        //if(cnames.length != columns) return false;
-        for(Integer[] row : table) {
-            if(row.length != columns) return false;
+        //if(cnames.size() != icnt + ecnt *2 + ocnt) return false;
+        if(formulas == null) return false;
+        if(formulas.size() != ecnt + ocnt) return false;
+        for(Integer formula : formulas.keySet()) {
+            if(!formulas.get(formula).check(formula)) return false;
         }
         return true;
     }
@@ -110,22 +91,20 @@ public class Element {
     public void setEcnt(int ecnt) {
         this.ecnt = ecnt;
     }
-    public int getSmask() {
-        return smask;
-    }
-    public void setSmask(int smask) {
-        this.smask = smask;
-    }
-    public String[] getCnames() {
+    
+    /*public String[] getCnames() {
         return cnames;
     }
     public void setCnames(String[] cnames) {
         this.cnames = cnames;
+    }*/
+
+    public Map<Integer, Formula> getFormulas() {
+        return formulas;
     }
-    public Integer[][] getTable() {
-        return table;
+
+    public void setFormulas(Map<Integer, Formula> formulas) {
+        this.formulas = formulas;
     }
-    public void setTable(Integer[][] table) {
-        this.table = table;
-    }
+    
 }

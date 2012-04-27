@@ -6,15 +6,15 @@ circuits:
     - [D1, 0]
   C_03:
     contacts:
-    - [IN_3, -1]
+    - [IN_2, -1]
     - [D1, 1]
   C_04:
     contacts:
-    - [IN_4, -1]
+    - [IN_3, -1]
     - [D2, 0]
   C_05:
     contacts: 
-    - [IN_5, -1]
+    - [IN_4, -1]
     - [D2, 1]
   C_06:
     contacts:
@@ -31,5 +31,5 @@ circuits:
 elements:
   D1: JK_trigger
   D2: 2_AND_NOT
-inputs: [IN_1, IN_3, IN_4, IN_5]
+inputs: [IN_1, IN_2, IN_3, IN_4]
 outputs: [OU_1, OU_2, OU_3]

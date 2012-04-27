@@ -279,7 +279,7 @@ public class ModelingEngine implements Runnable {
                 for (String elementName : active.get(timecnt)) {
                     // get the number of columns in a ToT for element
                     Element element = library.library.get(scheme.elements.get(elementName));
-                    int[] array = new int[element.table[0].length];
+                    int[] array = new int[element.icnt + element.ecnt * 2 + element.ocnt];
                     // forming inputs
                     for (int n = 0; n < element.icnt; n++) {
                         array[n] = results.signals.get(new Contact(elementName, n)).getState(timecnt);
@@ -288,7 +288,7 @@ public class ModelingEngine implements Runnable {
                         array[element.icnt + n] = results.signals.get(new Contact(elementName, element.icnt + element.ocnt + n)).getState(timecnt);
                     }
                     // calculating outputs and next state of internals
-                    element.process(array);
+                    element.calculate(array);
                     // creating new events
                     // if state of outputs isn't changed it still will be added as new event and hadnled at next routine
                     long nexttime = timecnt + element.delay;
